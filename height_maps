@@ -1,0 +1,9 @@
+import numpy as np
+import pandas as pd
+
+# Do not use until height maps are sorted.
+
+data = pd.read_csv("data/universe.csv")
+
+def get_sector_map(data, sector):
+    sector_data = data[data["sector"] == sector]
