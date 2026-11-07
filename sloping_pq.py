@@ -24,19 +24,26 @@ import pyvista as pv
 
 def make_slope_fn(rng, base_slope, anisotropy, n_waves=3, n_table=200, min_slope=0.02):
     phases = rng.uniform(0, 2 * np.pi, size=n_waves)
-    amps = rng.uniform(1, 2, size=n_waves)
+    amps = rng.uniform(0.5, 1, size=n_waves)
     freqs = np.arange(1, n_waves + 1)            # integer frequencies keep it periodic
     vals = np.linspace(0, 2 * np.pi, n_table, endpoint=False)
 
     x = sum(amps[k] * np.cos(freqs[k] * vals + phases[k]) for k in range(n_waves))
-    x = x / np.max(np.abs(x)) * 2                    # scale to [-1, 1]
+    x = x / np.max(np.abs(x)) * 5                    # scale to [-1, 1]
     table = np.maximum(base_slope + anisotropy * x, min_slope).tolist()
 
-    def slope_fn(theta):
+    def slope_fn(theta, ref_h, max_h): # ref_h should be <= max_height
+        gamma = 1.0
         idx = int((theta % math.tau) / math.tau * n_table) % n_table
-        return table[idx]
+        return table[idx] * np.exp(-gamma*(max_h/ref_h - 1))
 
     return slope_fn
+
+def smooth_noise(rng, n, scale):          # scale = correlation length in cells
+    f2 = np.fft.fftfreq(n)[:, None]**2 + np.fft.fftfreq(n)[None, :]**2
+    spec = np.fft.fft2(rng.normal(size=(n, n))) * np.exp(-2 * np.pi**2 * scale**2 * f2)
+    field = np.fft.ifft2(spec).real
+    return field / field.std()
 
 
 # 16-neighbourhood: 8 adjacent cells plus the 8 "knight moves". More directions
@@ -50,10 +57,10 @@ OFFSETS = [
 def build_terrain(
     peaks,                  # list of (x, y) positions
     heights,                # list of z values, one per peak
-    slope_mean=1.0,         # mean of the base slope across peaks
-    slope_std=0.2,         # std of the base slope across peaks
-    anisotropy=0.25,        # how strongly the slope varies with direction
-    n_harmonics=3,          # how wiggly that variation is
+    slope_mean=1.5,         # mean of the base slope across peaks
+    slope_std=0.3,         # std of the base slope across peaks
+    anisotropy=0.20,        # how strongly the slope varies with direction
+    n_harmonics=4,          # how wiggly that variation is
     edge_noise=0.15,        # relative noise on each step: (1 + N(0, edge_noise))
     final_noise_std=0.0,    # optional plain white noise added at the end
     extent=(-10, 10, -10, 10),
@@ -61,9 +68,11 @@ def build_terrain(
     floor=0.0,
     seed=0,
 ):
+    MAX_h = max(heights)
     rng = np.random.default_rng(seed)
     peaks = np.asarray(peaks, dtype=float)
     heights = np.asarray(heights, dtype=float)
+    field = smooth_noise(rng, resolution, 15) + 0.5 * smooth_noise(rng, resolution, 5)
 
     base_slopes = np.abs(rng.normal(slope_mean, slope_std, size=len(peaks)))
     slope_fns = [
@@ -90,7 +99,10 @@ def build_terrain(
             Z[i, j] = z0
             heapq.heappush(heap, (-z0, i, j, pid))
 
+    slopes_struct = np.zeros((resolution, resolution), dtype=float)
+
     while heap:
+        #print(len(heap))
         neg_h, i, j, pid = heapq.heappop(heap)
         h = -neg_h
         if h < Z[i, j]:
@@ -107,11 +119,20 @@ def build_terrain(
             step = math.hypot(di * dx, dj * dy)                  # horizontal step length
             theta = math.atan2(ys[nj] - py, xs[ni] - px)         # neighbour as seen from the peak
             factor = max(1.0 + rng.normal(0.0, edge_noise), 0.1) # keep the drop positive
-            h_new = h - slope_fn(theta) * step * factor
+            prev_slope = slopes_struct[i,j]
+            target = slope_fn(theta, h, MAX_h)
+            target = slope_fn(theta, h, MAX_h) * np.exp(0.3 * field[ni, nj])   # exp keeps it positive
+            rho = 0.5
+            sigma = 0.10
+            slope = np.exp(rho * np.log(prev_slope + 1e-8) + (1 - rho) * np.log(target + 1e-8) + sigma * rng.normal())
+            h_new = h - slope * step * factor
 
             if h_new > floor and h_new > Z[ni, nj]:
                 Z[ni, nj] = h_new
+                slopes_struct[ni, nj] = slope
                 heapq.heappush(heap, (-h_new, ni, nj, pid))
+
+        
 
     Z[np.isinf(Z)] = floor           # cells no peak reached before the floor
 
