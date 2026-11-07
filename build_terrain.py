@@ -6,6 +6,7 @@ import pyvista as pv
 import time
 import pandas as pd
 from pathlib import Path
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 
 vol = pd.read_csv(Path("data") / "volatility.csv", index_col=0).reset_index()
 univ = pd.read_csv(Path("data") / "universe.csv", index_col=0).reset_index()
@@ -343,4 +344,127 @@ def show_terrain_time(GX, GY, GZ, time_values):
         interaction_event="always",
     )
 
+    plotter.show()
+
+
+import numpy as np
+import pyvista as pv
+
+def make_trees(frame):
+    """frame: (n, 4) array of x, y, z, size -> (trunk_mesh, canopy_mesh)"""
+    if len(frame) == 0:
+        # dummy invisible point, because glyphing an empty cloud fails
+        frame = np.array([[0.0, 0.0, -100.0, 1e-3]])
+
+    pts = pv.PolyData(frame[:, :3])
+    pts["size"] = frame[:, 3]
+
+    trunks = pts.glyph(geom=trunk_geom, scale="size", factor=1.0, orient=False)
+    canopies = pts.glyph(geom=canopy_geom, scale="size", factor=1.0, orient=False)
+    return trunks, canopies
+
+
+def show_terrain_time_trees(GX, GY, GZ, time_values, trees=None):
+
+    # COLOR MAP
+
+    # zmax = float(np.max(GZ))
+    # sea = 0.5                      # sea level (land starts above this)
+    # n = 256
+    # n_water = int(np.clip(sea / zmax, 0, 1) * n)
+    # n_land = n - n_water
+    # water = np.tile([0.1, 0.35, 0.7, 1.0], (n_water, 1))
+    # # land: light green at low elevation -> dark green at high elevation
+    # light = np.array([0.55, 0.80, 0.40, 1.0])
+    # dark  = np.array([0.10, 0.45, 0.15, 1.0])
+    # land = np.linspace(light, dark, n_land)
+    # land_cmap = ListedColormap(np.vstack([water, land]))
+
+    zmax = float(np.max(GZ))
+    sea = 0.5                       # sea level
+    s = sea / zmax                  # sea level as a fraction of the full range
+
+    def land(f):
+        """Map f in [0, 1] (0 = shoreline, 1 = highest peak) to a colormap position."""
+        return s + f * (1 - s)
+
+    stops = [
+        (0.0,       "#1a5ab3"),     # deep water
+        (s,         "#1a5ab3"),     # water up to sea level (hard edge)
+        (land(0.00), "#8ccc66"),    # lowland: light green
+        (land(0.30), "#2f8a3a"),    # hills: darker green
+        (land(0.50), "#d9a441"),    # foothills: yellow-orange
+        (land(0.65), "#c8662b"),    # mountains: orange
+        (land(0.80), "#7d7d7d"),    # rock: gray
+        (1.0,       "#e6e6e6"),     # peaks: light gray
+    ]
+    terrain_cmap = LinearSegmentedColormap.from_list("green_mountain", stops, N=512)
+
+    n_times = GZ.shape[2]
+    assert len(time_values) == n_times
+    if trees is not None:
+        assert len(trees) == n_times
+
+    Z = GZ[:, :, 0]
+    grid = pv.StructuredGrid(GX, GY, Z)
+    grid["height"] = Z.flatten(order="F")
+
+    plotter = pv.Plotter()
+    # plotter.add_mesh(
+    #     grid, scalars="height", cmap="terrain",
+    #     clim=(0, np.max(GZ)), smooth_shading=True, show_edges=False,
+    # )
+    # plotter.add_mesh(
+    #     grid, scalars="height", cmap=land_cmap,
+    #     clim=(0, zmax), smooth_shading=True, show_edges=False,
+    # )
+
+    plotter.add_mesh(
+        grid, scalars="height", cmap=terrain_cmap,
+        clim=(0, zmax), smooth_shading=True, show_edges=False,
+    )
+    
+    plotter.add_axes()
+    plotter.show_bounds(grid="back")
+
+    # ---- tree templates: height 1, base at the origin ----
+    global trunk_geom, canopy_geom
+    trunk_geom = pv.Cylinder(
+        center=(0, 0, 0.15), direction=(0, 0, 1),
+        radius=0.04, height=0.3, resolution=8,
+    )
+    canopy_geom = pv.Cone(
+        center=(0, 0, 0.65), direction=(0, 0, 1),
+        height=0.7, radius=0.22, resolution=10,
+    )
+
+    def draw_trees(t):
+        if trees is None:
+            return
+        trunks, canopies = make_trees(trees[t])
+        # same `name` replaces the previous actor instead of stacking a new one
+        plotter.add_mesh(trunks, color="saddlebrown", name="trunks", render=False)
+        plotter.add_mesh(canopies, color="forestgreen", name="canopies",
+                         smooth_shading=True, render=False)
+
+    draw_trees(0)
+
+    date_label = plotter.add_text(str(time_values[0]), position="upper_left", font_size=12)
+
+    x_flat = GX.flatten(order="F")
+    y_flat = GY.flatten(order="F")
+
+    def update_terrain(value):
+        t = int(round(value))
+        Z_new = GZ[:, :, t]
+        grid.points = np.column_stack([x_flat, y_flat, Z_new.flatten(order="F")])
+        grid["height"] = Z_new.flatten(order="F")
+        draw_trees(t)
+        date_label.SetInput(str(time_values[t]))
+        plotter.render()
+
+    plotter.add_slider_widget(
+        update_terrain, rng=(0, n_times - 1), value=0,
+        title="Time", interaction_event="always",
+    )
     plotter.show()

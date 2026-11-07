@@ -1,18 +1,27 @@
 import numpy as np
-
-from build_terrain import build_terrain, show_terrain_time
-
-"""
-./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2DT.py
-"""
-
-
-import time
 import pandas as pd
 from pathlib import Path
-import sys
+from scipy.stats import rankdata
+
+"""
+./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2DT_trees.py
+"""
+
+
+
+from build_terrain import show_terrain_time_trees
 from MDS import mds_rows
 
+# ---------------- load precomputed terrain ----------------
+GZ = np.load("struct_Z.npy")   # already includes the +0.5 land shift
+GX = np.load("struct_X.npy")
+GY = np.load("struct_Y.npy")
+
+# 1D axes recovered from the meshgrid (built with indexing="ij")
+gx = GX[:, 0]
+gy = GY[0, :]
+
+# ---------------- data ----------------
 vol = pd.read_csv(Path("data") / "volatility.csv", index_col=0).reset_index()
 univ = pd.read_csv(Path("data") / "universe.csv", index_col=0).reset_index()
 returns = pd.read_parquet(Path("data") / "prices.parquet").pct_change().reset_index()
@@ -22,111 +31,52 @@ returns["date"] = pd.to_datetime(returns["date"])
 
 sectors = sorted(univ["sector"].unique())
 cell_size = 10
-margin = 2.5        # peaks stay this far from the cell edge, so the slopes can reach floor inside the cell
-beach = 1.5         # fade-to-water width at the cell edge
-res = 200           # resolution per cell
-hmax = 5.0          # height of the most volatile stock in the whole universe
-n_cols, n_rows = 3, 2
-
-NORMALIZE_VOL = False
-
+margin = 2.5
 corners = [(0, 0), (10, 0), (20, 0), (0, 10), (10, 10), (20, 10)]
 
-def smoothstep(t):
-    t = np.clip(t, 0, 1)
-    return t * t * (3 - 2 * t)
-
+# must be identical to the values used when the terrain was generated
 window = 30
 max_len_time_values = 100
 
 time_values = vol["date"].iloc[window:window + max_len_time_values].values
+assert GZ.shape[2] == len(time_values), "saved terrain has a different number of time steps"
+
+# ---------------- per-stock positions and returns ----------------
 sector_data = np.empty((len(sectors), len(time_values)), dtype=object)
+
 for j, t in enumerate(time_values):
     start_time = t - pd.Timedelta(days=window)
     for i, s in enumerate(sectors):
         tickers = univ.loc[univ["sector"] == s, "ticker"].values
-
-        if NORMALIZE_VOL:
-            subset_vola = vol.loc[
-                (vol["date"] >= start_time) &
-                (vol["date"] <= t),
-                tickers
-            ].values.mean(axis=0)
-            subset_vola = (subset_vola - np.mean(subset_vola)) / np.std(subset_vola)
-        else:
-            subset_vola = vol.loc[
-                vol["date"] == t, tickers
-            ].values.astype(float).flatten()
 
         subset_returns = returns.loc[
             (returns["date"] >= start_time) &
             (returns["date"] <= t),
             tickers
         ].values
-        cum_ret = np.prod(1 + subset_returns, axis=0) - 1
+        mean_returns = np.mean(subset_returns, axis=0)
 
         corr = np.corrcoef(subset_returns, rowvar=False)
         res_mds, _ = mds_rows(corr)                      # (n, 2) in [-1, 1]
-        
+
         cx, cy = corners[i]
         usable = cell_size - 2 * margin
         xy = np.empty_like(res_mds, dtype=float)
         xy[:, 0] = cx + margin + (res_mds[:, 0] + 1) / 2 * usable
         xy[:, 1] = cy + margin + (res_mds[:, 1] + 1) / 2 * usable
-        sector_data[i,j] = (cx, cy, xy, subset_vola, cum_ret)
+        sector_data[i, j] = (cx, cy, xy, mean_returns)
 
-GZ = np.zeros((n_cols * res, n_rows * res, len(time_values)))         # ij indexing: [x, y, t]
-gx = np.concatenate([np.linspace(c * cell_size, (c + 1) * cell_size, res) for c in range(n_cols)])
-gy = np.concatenate([np.linspace(r * cell_size, (r + 1) * cell_size, res) for r in range(n_rows)])
-GX, GY = np.meshgrid(gx, gy, indexing="ij")
-
-vmax = [
-    max(sector_data[i,j][3].max() for i in range(sector_data.shape[0]))
-    for j in range(sector_data.shape[1])
-]
-
-c = 0
-for j, t in enumerate(time_values):
-    for i, s in enumerate(sectors):
-        cx, cy, xy, last_vola, _ = sector_data[i,j]
-        vmax_this = vmax[j]
-        heights = hmax * last_vola / vmax_this
-        heights = np.maximum(heights, 0.3)               # peaks must be above floor
-
-        X, Y, Z = build_terrain(
-            xy, heights,
-            extent=(cx, cx + cell_size, cy, cy + cell_size),
-            resolution=res,
-            floor=0.0,
-            seed=i,
-        )
-        print(i, j)
-
-        # guarantee water at the cell border
-        d_edge = np.minimum.reduce([X - cx, cx + cell_size - X, Y - cy, cy + cell_size - Y])
-        Z = Z * smoothstep(d_edge / beach)
-
-        ci, ri = int(cx // cell_size), int(cy // cell_size)
-        GZ[ci * res:(ci + 1) * res, ri * res:(ri + 1) * res, j] = Z
-
-GZ[GZ > 0] += 0.5
-
-np.save("struct_Z.npy", GZ)
-np.save("struct_X.npy", GX)
-np.save("struct_Y.npy", GY)
-
-show_terrain_time(
-    GX,
-    GY,
-    GZ,
-    time_values
-)
-
+# ---------------- trees ----------------
 rng = np.random.default_rng(0)
 
-max_trees, spread = 30, 0.7
-# fixed offsets per (sector, stock)
-offsets = {(i, k): rng.normal(0, spread, (max_trees, 2))
+max_side = 8                 # max small trees per stock
+main_min, main_max = 0.6, 3.0    # main tree height range (min for weakest, max for best)
+side_frac = 0.2              # side tree height as a fraction of the main tree height
+MAIN_FOR_LOSERS = True       # False -> stocks with negative returns get no trees at all
+
+# fixed per-stock random (angle, radial fraction) so side trees don't jump between frames
+offsets = {(i, k): np.column_stack([rng.uniform(0, 2 * np.pi, max_side),
+                                    rng.uniform(0, 1, max_side)])
            for i in range(len(sectors))
            for k in range(len(sector_data[i, 0][2]))}
 
@@ -135,19 +85,18 @@ def surface_z(GZ, gx, gy, j, x, y):
     iy = np.clip(np.searchsorted(gy, y), 0, len(gy) - 1)
     return GZ[ix, iy, j]
 
-from scipy.stats import rankdata
-
 def veg_scores(sector_data, j):
-    all_ret = np.concatenate([sector_data[i, j][4] for i in range(sector_data.shape[0])])
-    pct = (rankdata(all_ret) - 1) / (len(all_ret) - 1)       # percentile rank
-    score = np.where(all_ret > 0, pct, 0.0)                  # no trees on losers
-    # split back per sector
+    all_ret = np.concatenate([sector_data[i, j][3] for i in range(sector_data.shape[0])])
+    pct = (rankdata(all_ret) - 1) / (len(all_ret) - 1)
+    score = np.where(all_ret > 0, pct, 0.0)
     out, k = [], 0
     for i in range(sector_data.shape[0]):
-        n = len(sector_data[i, j][4]); out.append(score[k:k+n]); k += n
+        n = len(sector_data[i, j][3])
+        out.append(score[k:k + n])
+        k += n
     return out
 
-trees = []   # trees[j] -> array of (x, y, z, size)
+trees = []   # trees[j] -> (n, 4) array of x, y, z, size
 for j in range(len(time_values)):
     scores = veg_scores(sector_data, j)
     frame = []
@@ -155,12 +104,29 @@ for j in range(len(time_values)):
         xy = sector_data[i, j][2]
         for k, (px, py) in enumerate(xy):
             s = scores[i][k]
-            n = int(round(max_trees * s))
+            if s == 0 and not MAIN_FOR_LOSERS:
+                continue
+
+            # ---- main tree, on the peak ----
+            main_size = main_min + (main_max - main_min) * s
+            z_peak = surface_z(GZ, gx, gy, j, np.array([px]), np.array([py]))[0]
+            if z_peak <= 0.6:
+                continue                      # peak is not on land
+            frame.append((px, py, z_peak, main_size))
+
+            # ---- small trees around it ----
+            n = int(round(max_side * s))
             if n == 0:
                 continue
-            pts = np.array([px, py]) + offsets[(i, k)][:n]
-            z = surface_z(GZ, gx, gy, j, pts[:, 0], pts[:, 1])
-            ok = z > 0.6                                  # skip water/beach (after the +0.5 shift)
-            size = 0.2 + 0.6 * s                          # better performers = bigger trees
-            frame.extend((x, y, zz, size) for (x, y), zz in zip(pts[ok], z[ok]))
-    trees.append(np.array(frame))
+            ang, u = offsets[(i, k)][:n, 0], offsets[(i, k)][:n, 1]
+            # start outside the main canopy (radius ~0.22 * height), then spread outwards
+            dist = 0.22 * main_size + 0.15 + u * 0.6
+            sx = px + dist * np.cos(ang)
+            sy = py + dist * np.sin(ang)
+            z = surface_z(GZ, gx, gy, j, sx, sy)
+            ok = z > 0.6
+            side_size = side_frac * main_size
+            frame.extend((x, y, zz, side_size) for x, y, zz in zip(sx[ok], sy[ok], z[ok]))
+    trees.append(np.array(frame).reshape(-1, 4))
+
+show_terrain_time_trees(GX, GY, GZ, time_values, trees=trees)
