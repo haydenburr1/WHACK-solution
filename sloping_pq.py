@@ -32,10 +32,14 @@ def make_slope_fn(rng, base_slope, anisotropy, n_waves=3, n_table=200, min_slope
     x = x / np.max(np.abs(x)) * 5                    # scale to [-1, 1]
     table = np.maximum(base_slope + anisotropy * x, min_slope).tolist()
 
-    def slope_fn(theta, ref_h, max_h): # ref_h should be <= max_height
-        gamma = 1.0
+    # def slope_fn(theta, ref_h, max_h): # ref_h should be <= max_height
+    #     gamma = 1.0
+    #     idx = int((theta % math.tau) / math.tau * n_table) % n_table
+    #     return table[idx] * np.exp(-gamma*(max_h/ref_h - 1))
+
+    def slope_fn(theta): # ref_h should be <= max_height
         idx = int((theta % math.tau) / math.tau * n_table) % n_table
-        return table[idx] * np.exp(-gamma*(max_h/ref_h - 1))
+        return table[idx]
 
     return slope_fn
 
@@ -115,13 +119,14 @@ def build_terrain(
             ni, nj = i + di, j + dj
             if not (0 <= ni < resolution and 0 <= nj < resolution):
                 continue             # outside the grid
+            # get closest peak that is lower than this point
 
             step = math.hypot(di * dx, dj * dy)                  # horizontal step length
             theta = math.atan2(ys[nj] - py, xs[ni] - px)         # neighbour as seen from the peak
             factor = max(1.0 + rng.normal(0.0, edge_noise), 0.1) # keep the drop positive
             prev_slope = slopes_struct[i,j]
-            target = slope_fn(theta, h, MAX_h)
-            target = slope_fn(theta, h, MAX_h) * np.exp(0.3 * field[ni, nj])   # exp keeps it positive
+            #target = slope_fn(theta, h, MAX_h)
+            target = slope_fn(theta) * np.exp(0.3 * field[ni, nj])   # exp keeps it positive
             rho = 0.5
             sigma = 0.10
             slope = np.exp(rho * np.log(prev_slope + 1e-8) + (1 - rho) * np.log(target + 1e-8) + sigma * rng.normal())
@@ -131,8 +136,6 @@ def build_terrain(
                 Z[ni, nj] = h_new
                 slopes_struct[ni, nj] = slope
                 heapq.heappush(heap, (-h_new, ni, nj, pid))
-
-        
 
     Z[np.isinf(Z)] = floor           # cells no peak reached before the floor
 
@@ -161,8 +164,39 @@ def show_terrain(X, Y, Z, peaks, heights, marker_extra=2.0):
 
 
 if __name__ == "__main__":
-    peak_xy = [(-5, -4), (0, 3), (6, -2), (4, 6)]
-    peak_z = [8.0, 5.0, 6.5, 8.0]
+    
+    # # 1. Single peak: shows the slope pattern with no overlap
+    # peak_xy = [(0, 0)]
+    # peak_z  = [8.0]
+
+    # # 2. Twin peaks, equal height: the front where they meet is easy to see
+    # peak_xy = [(-4, 0), (4, 0)]
+    # peak_z  = [7.0, 7.0]
+
+    # 3. One dominant peak with small satellites
+    peak_xy = [(0, 0), (-6, 5), (6, 5), (0, -7), (7, -4)]
+    peak_z  = [9.0, 4.0, 3.5, 4.5, 3.0]
+
+    # # 4. Ridge: peaks in a line with varying heights
+    # peak_xy = [(-8, -6), (-4, -3), (0, 0), (4, 3), (8, 6)]
+    # peak_z  = [5.0, 7.0, 8.5, 7.5, 5.5]
+
+    # # 5. Tight cluster: heavy overlap, merging happens high up
+    # peak_xy = [(-1, -1), (1, 0), (0, 2), (-2, 1.5)]
+    # peak_z  = [8.0, 7.0, 7.5, 6.0]
+
+    # # 6. Scattered range: eight peaks of very different heights
+    # peak_xy = [(-8, 7), (-3, 2), (2, 8), (7, 4), (-6, -6), (0, -3), (5, -7), (8, -1)]
+    # peak_z  = [4.0, 6.5, 5.0, 7.5, 8.5, 3.0, 6.0, 4.5]
+
+    # # 7. Ring of equal peaks around a lower centre peak (tests a valley between them)
+    # peak_xy = [(6, 0), (3, 5.2), (-3, 5.2), (-6, 0), (-3, -5.2), (3, -5.2), (0, 0)]
+    # peak_z  = [7.0, 7.0, 7.0, 7.0, 7.0, 7.0, 3.0]
+
+    # # 8. Peaks near the edge: tests the grid boundary
+    # peak_xy = [(-9, -9), (9, 9), (-9, 9), (9, -9), (0, 0)]
+    # peak_z  = [6.0, 7.0, 5.0, 8.0, 4.0]
+
 
     X, Y, Z = build_terrain(peak_xy, peak_z)
     show_terrain(X, Y, Z, peak_xy, peak_z)
