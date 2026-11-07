@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import pyvista as pv
 import vtk
+import objects.tree as tree
 from scipy.ndimage import zoom
 from scipy.spatial import cKDTree
 
@@ -43,6 +44,11 @@ def get_sector_map(sector_data, sector, ticker_data, day=2):
 
     return height_map, tickers
 
+def can_have_tree(height):
+    if height > 0.8:
+        return False
+
+    return True
 
 def face_to_xyz(sector, a, b, h):
     # Map face coordinates (a, b) plus a height h to 3D, pushing outward along the face normal.
@@ -187,6 +193,52 @@ def draw_day(plotter, day, first=False):
 
     return actor, cKDTree(label_points), labels
 
+def add_sector_names(plotter):
+
+    points = []
+    labels = []
+
+    for sector, (axis, sign) in FACE_AXES.items():
+
+        # Direction corresponding to the sector's original cube face.
+        direction = np.zeros(3)
+        direction[axis] = sign
+
+        # Find the maximum volatility for this sector.
+        tickers = sector_data.loc[
+            sector_data["sector"] == sector, "ticker"
+        ].tolist()
+
+        max_volatility = np.nanmax(
+            ticker_data[tickers].iloc[FIRST_DAY:].to_numpy()
+        )
+
+        # Place the label slightly above the terrain.
+        radius = (
+            SPHERE_RADIUS
+            + max_volatility * HEIGHT_SCALE
+            + 0.4
+        )
+
+        position = direction * radius
+
+        points.append(position)
+        labels.append(sector)
+
+    plotter.add_point_labels(
+        np.array(points),
+        labels,
+        font_size=16,
+        text_color="white",
+        shape="rounded_rect",
+        shape_color="black",
+        shape_opacity=0.65,
+        margin=5,
+        show_points=False,
+        always_visible=False,
+        name="sector_labels"
+    )
+
 
 if __name__ == "__main__":
 
@@ -213,6 +265,7 @@ if __name__ == "__main__":
         plotter.render()
 
     show_day(FIRST_DAY, first=True)
+    add_sector_names(plotter)
 
     def on_slide(value):
         day = int(round(value))
