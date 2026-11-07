@@ -101,7 +101,6 @@ def build_terrain(
     # Smooth multiplier field, computed ONCE (exp keeps the slope positive)
     field = sum(w * smooth_noise(rng, W, s) for s, w in field_scales) # shape (W)
     mult = np.exp(field_strength * field).ravel().tolist()
-    print('mult:', len(mult))
 
     # Per-edge random numbers, drawn in one go (one value per cell-and-offset pair)
     M = len(OFFSETS)
@@ -247,31 +246,41 @@ def show_terrain(X, Y, Z):
     plotter.show()
 
 
-def show_terrain_time(GX, GY, make_frame, dates, hmax):
-    """
-    Display an animated terrain with a time slider.
 
-    GX, GY: Global coordinate grids
-    make_frame: Function that returns GZ for a given time index
-    dates: Available time points
-    hmax: Maximum terrain height
+def show_terrain_time(GX, GY, GZ, time_values):
     """
+    Display precomputed terrain frames using a PyVista slider.
+
+    GX, GY: Fixed spatial coordinate grids (2D)
+    GZ: Precomputed terrain heights (3D: x, y, time)
+    time_values: Corresponding timestamps
+    """
+
     import numpy as np
     import pyvista as pv
 
-    # Generate initial terrain
-    GZ = make_frame(0)
+    n_times = GZ.shape[2]
 
-    grid = pv.StructuredGrid(GX, GY, GZ)
-    grid["height"] = GZ.flatten(order="F")
+    assert len(time_values) == n_times
+
+    # ----------------------------------------------
+    # Initialise first frame
+    # ----------------------------------------------
+
+    Z = GZ[:, :, 0]
+
+    grid = pv.StructuredGrid(GX, GY, Z)
+
+    grid["height"] = Z.flatten(order="F")
 
     plotter = pv.Plotter()
 
+    # Fixed colour scale across all timestamps
     plotter.add_mesh(
         grid,
         scalars="height",
         cmap="terrain",
-        clim=(0, hmax),
+        clim=(0, np.max(GZ)),
         smooth_shading=True,
         show_edges=False,
     )
@@ -279,36 +288,56 @@ def show_terrain_time(GX, GY, make_frame, dates, hmax):
     plotter.add_axes()
     plotter.show_bounds(grid="back")
 
-    # Display current date
+    # ----------------------------------------------
+    # Date label
+    # ----------------------------------------------
+
     date_label = plotter.add_text(
-        str(dates[0]),
+        str(time_values[0]),
         position="upper_left",
         font_size=12,
     )
 
-    # Update terrain when slider moves
+    # ----------------------------------------------
+    # Fixed spatial coordinates
+    # ----------------------------------------------
+
+    x_flat = GX.flatten(order="F")
+    y_flat = GY.flatten(order="F")
+
+    # ----------------------------------------------
+    # Slider callback
+    # ----------------------------------------------
+
     def update_terrain(value):
+
         t = int(round(value))
 
-        new_GZ = make_frame(t)
+        # Simply select precomputed terrain
+        Z_new = GZ[:, :, t]
 
-        # Update mesh points without recreating the plot
+        # Update mesh geometry
         grid.points = np.column_stack([
-            GX.flatten(order="F"),
-            GY.flatten(order="F"),
-            new_GZ.flatten(order="F"),
+            x_flat,
+            y_flat,
+            Z_new.flatten(order="F")
         ])
 
-        grid["height"] = new_GZ.flatten(order="F")
+        # Update height colouring
+        grid["height"] = Z_new.flatten(order="F")
 
-        date_label.SetInput(str(dates[t]))
+        # Update date label
+        date_label.SetInput(str(time_values[t]))
 
         plotter.render()
 
-    # Time slider
+    # ----------------------------------------------
+    # Slider
+    # ----------------------------------------------
+
     plotter.add_slider_widget(
         update_terrain,
-        rng=(0, len(dates) - 1),
+        rng=(0, n_times - 1),
         value=0,
         title="Time",
         interaction_event="always",

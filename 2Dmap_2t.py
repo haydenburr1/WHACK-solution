@@ -3,7 +3,7 @@ import numpy as np
 from build_terrain import build_terrain, show_terrain_time
 
 """
-./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2Dmap_2.py
+./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2Dmap_2t.py
 """
 
 
@@ -46,9 +46,56 @@ for i, s in enumerate(sectors):
 
 vmax = max(d[3].max() for d in sector_data)
 
+def smoothstep(t):
+    t = np.clip(t, 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+# --------------------------------------------------
+# GLOBAL GRID
+# --------------------------------------------------
+
+gx = np.concatenate([
+    np.linspace(c * cell_size, (c + 1) * cell_size, res)
+    for c in range(n_cols)
+])
+
+gy = np.concatenate([
+    np.linspace(r * cell_size, (r + 1) * cell_size, res)
+    for r in range(n_rows)
+])
+
+GX, GY = np.meshgrid(gx, gy, indexing="ij")
+
+
+# --------------------------------------------------
+# TIME SERIES
+# --------------------------------------------------
+
+# Use the same number of observations for both datasets.
+n_times = min(len(vol), len(returns))
+
+dates = vol.iloc[:n_times, 0].values
+
+all_tickers = univ["ticker"].unique()
+
+# One common height scale for all dates and sectors.
+vmax = np.nanmax(
+    vol.loc[:n_times - 1, all_tickers].to_numpy(dtype=float)
+)
+
+
+
+
 def make_frame(t):
 
     GZ = np.zeros((n_cols * res, n_rows * res))
+
+    # Ensure t is a valid endpoint
+    t = int(t)
+
+    # Rolling window: [t - window : t]
+    start = t - window
 
     # ----------------------------------------------
     # Build every sector
@@ -60,18 +107,19 @@ def make_frame(t):
             univ["sector"] == s, "ticker"
         ].values
 
-        # Volatility at current time
+        # Volatility at current time t
         last_vola = vol.loc[t, tickers].values.astype(float)
 
-        # Historical returns up to current time
-        start = max(0, t - window + 1)
-
+        # Returns over the rolling window
         subset_returns = returns.loc[
             start:t, tickers
         ]
 
         # Calculate correlation matrix
-        corr = subset_returns.corr().fillna(0).values
+        corr = np.corrcoef(
+            subset_returns.to_numpy(),
+            rowvar=False
+        )
 
         np.fill_diagonal(corr, 1.0)
 
@@ -139,6 +187,7 @@ def make_frame(t):
         ] = Z
 
     return GZ
+
 
 
 show_terrain_time(
