@@ -199,6 +199,58 @@ def report(world: dict, date: str = "2020-03-16", sector: str = "Financials"):
               f"{'same sub-industry' if match else ''}")
     print(f"  {same}/{len(rows)} nearest neighbours share a sub-industry")
 
+def pairwise_d2(data: np.ndarray, metric: str = "euclidean", standardize: bool = False):
+    """Squared distances between the ROWS of `data`, shape (n_points, n_features).
+
+    metric="euclidean"    squared Euclidean distance between rows.
+    metric="correlation"  d^2 = 2 * (1 - rho), rho = Pearson correlation between
+                          rows (the same distance the stock pipeline uses; here
+                          the features are what is correlated over).
+    standardize=True      z-score every column first. Only used by the Euclidean
+                          metric (correlation is already scale-free per row).
+    """
+    x = np.asarray(data, dtype=float)
+    if x.ndim != 2:
+        raise ValueError(f"expected a 2-D matrix (rows = datapoints), got shape {x.shape}")
+    n, m = x.shape
+    if n < 3:
+        raise ValueError(f"{n} rows; MDS needs at least 3 datapoints.")
+    if not np.isfinite(x).all():
+        raise ValueError("data contains NaN or inf; clean or impute it first.")
+
+    if metric == "euclidean":
+        x = x - x.mean(axis=0)                        # distances don't change; helps precision
+        if standardize:
+            sd = x.std(axis=0)
+            x = x / np.where(sd > 0, sd, 1.0)         # constant columns are left at 0
+        sq = (x ** 2).sum(axis=1)
+        d2 = sq[:, None] + sq[None, :] - 2.0 * (x @ x.T)
+        d2 = np.clip(0.5 * (d2 + d2.T), 0.0, None)   # symmetrise, remove rounding negatives
+    elif metric == "correlation":
+        if m < 2:
+            raise ValueError("correlation between rows needs at least 2 columns.")
+        with np.errstate(invalid="ignore", divide="ignore"):
+            rho = np.corrcoef(x)                      # rows are the variables
+        rho = np.nan_to_num(rho, nan=0.0)             # constant rows -> uncorrelated
+        np.fill_diagonal(rho, 1.0)
+        d2 = corr_to_d2(rho)
+    else:
+        raise ValueError(f"unknown metric {metric!r}; use 'euclidean' or 'correlation'.")
+
+    np.fill_diagonal(d2, 0.0)
+    return d2
+
+def mds_rows(data: np.ndarray, metric: str = "euclidean",
+             standardize: bool = False, dims: int = 2):
+    """Classical MDS of the rows of a data matrix.
+ 
+    data: (n_points, n_features), one datapoint per row.
+    Returns (positions (n_points, dims), fit), where fit is the share of the
+    distance structure kept by the `dims` axes (1.0 = exact).
+    """
+    return classical_mds(pairwise_d2(data, metric, standardize), dims)
+
+
 
 def main():
     self_test()

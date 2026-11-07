@@ -5,6 +5,10 @@ Outputs (in ./data):
   universe.csv    - ticker, name, sector, sub_industry, avg_dollar_volume  (commit this)
   prices.parquet  - adjusted close, one row per trading day, one column per ticker (gitignore this)
 Delete prices.parquet to force a re-download; delete universe.csv as well to rebuild the stock list.
+
+run Tobias:
+./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/fetch_data.py
+
 """
 import io
 import time

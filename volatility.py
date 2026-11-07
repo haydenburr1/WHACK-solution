@@ -10,6 +10,11 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 PRICES_FILE = DATA_DIR / "prices.parquet"
 OUTPUT_FILE = DATA_DIR / "volatility.parquet"
 
+"""
+run tobias:
+./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/volatility.py
+"""
+
 # Settings
 WINDOW = 30
 TRADING_DAYS = 252
