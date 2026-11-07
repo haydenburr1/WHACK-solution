@@ -3,3 +3,4 @@ venv
 data/prices.*
 data/volatility.*
 data/normalized_volatility.*
+data/mds_*

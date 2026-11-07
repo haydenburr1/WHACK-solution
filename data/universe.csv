@@ -1,266 +1,266 @@
 ticker,name,sector,sub_industry,avg_dollar_volume
-ROST,Ross Stores,Consumer Discretionary,Apparel Retail,263296333.5847967
-TJX,TJX Companies,Consumer Discretionary,Apparel Retail,420357891.7000656
+ROST,Ross Stores,Consumer Discretionary,Apparel Retail,263296332.76812935
+TJX,TJX Companies,Consumer Discretionary,Apparel Retail,420357893.6558818
 LULU,Lululemon Athletica,Consumer Discretionary,"Apparel, Accessories & Luxury Goods",500231376.8815624
-NKE,"Nike, Inc.",Consumer Discretionary,"Apparel, Accessories & Luxury Goods",745595150.260596
-RL,Ralph Lauren Corporation,Consumer Discretionary,"Apparel, Accessories & Luxury Goods",119680042.15329334
-TPR,"Tapestry, Inc.",Consumer Discretionary,"Apparel, Accessories & Luxury Goods",150150604.63101748
-F,Ford Motor Company,Consumer Discretionary,Automobile Manufacturers,562865314.2517194
-GM,General Motors,Consumer Discretionary,Automobile Manufacturers,560952367.3884965
+NKE,"Nike, Inc.",Consumer Discretionary,"Apparel, Accessories & Luxury Goods",745595151.8389968
+RL,Ralph Lauren Corporation,Consumer Discretionary,"Apparel, Accessories & Luxury Goods",119680042.40118824
+TPR,"Tapestry, Inc.",Consumer Discretionary,"Apparel, Accessories & Luxury Goods",150150604.5412241
+F,Ford Motor Company,Consumer Discretionary,Automobile Manufacturers,562865310.8962567
+GM,General Motors,Consumer Discretionary,Automobile Manufacturers,560952369.2663497
 TSLA,"Tesla, Inc.",Consumer Discretionary,Automobile Manufacturers,17959536964.267544
-APTV,Aptiv,Consumer Discretionary,Automotive Parts & Equipment,184509932.50820914
+APTV,Aptiv,Consumer Discretionary,Automotive Parts & Equipment,184509932.69549266
 AZO,AutoZone,Consumer Discretionary,Automotive Retail,341971418.8922354
 CVNA,Carvana,Consumer Discretionary,Automotive Retail,394076382.08929116
 ORLY,O'Reilly Automotive,Consumer Discretionary,Automotive Retail,327964068.86424047
 AMZN,Amazon,Consumer Discretionary,Broadline Retail,8876170022.736387
-EBAY,eBay Inc.,Consumer Discretionary,Broadline Retail,336919266.765125
-LVS,Las Vegas Sands,Consumer Discretionary,Casinos & Gaming,255176899.96125457
-MGM,MGM Resorts,Consumer Discretionary,Casinos & Gaming,227153597.3944452
-WYNN,Wynn Resorts,Consumer Discretionary,Casinos & Gaming,278228432.32241493
-BBY,Best Buy,Consumer Discretionary,Computer & Electronics Retail,199567834.45295498
-GRMN,Garmin,Consumer Discretionary,Consumer Electronics,97483632.4142304
-GPC,Genuine Parts Company,Consumer Discretionary,Distributors,98779592.6514718
+EBAY,eBay Inc.,Consumer Discretionary,Broadline Retail,336919268.8793382
+LVS,Las Vegas Sands,Consumer Discretionary,Casinos & Gaming,255176896.71839514
+MGM,MGM Resorts,Consumer Discretionary,Casinos & Gaming,227153598.13523948
+WYNN,Wynn Resorts,Consumer Discretionary,Casinos & Gaming,278228431.51721716
+BBY,Best Buy,Consumer Discretionary,Computer & Electronics Retail,199567834.58184177
+GRMN,Garmin,Consumer Discretionary,Consumer Electronics,97483631.94757615
+GPC,Genuine Parts Company,Consumer Discretionary,Distributors,98779592.10298282
 DECK,Deckers Brands,Consumer Discretionary,Footwear,168842992.37709537
-HD,Home Depot (The),Consumer Discretionary,Home Improvement Retail,1002603353.1456096
-LOW,Lowe's,Consumer Discretionary,Home Improvement Retail,563669599.6435634
-DHI,D. R. Horton,Consumer Discretionary,Homebuilding,278838148.90569913
-LEN,Lennar,Consumer Discretionary,Homebuilding,241545507.78513077
+HD,Home Depot (The),Consumer Discretionary,Home Improvement Retail,1002603348.4594747
+LOW,Lowe's,Consumer Discretionary,Home Improvement Retail,563669603.1988146
+DHI,D. R. Horton,Consumer Discretionary,Homebuilding,278838147.82019377
+LEN,Lennar,Consumer Discretionary,Homebuilding,241545508.6914523
 NVR,"NVR, Inc.",Consumer Discretionary,Homebuilding,114929143.4600505
-PHM,PulteGroup,Consumer Discretionary,Homebuilding,153229342.79444423
-WSM,"Williams-Sonoma, Inc.",Consumer Discretionary,Homefurnishing Retail,154089994.9465698
-BKNG,Booking Holdings,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",862751964.1133865
-CCL,Carnival Corporation,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",489962653.1889864
-EXPE,Expedia Group,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",312264103.40768266
-HLT,Hilton Worldwide,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",287261904.59241575
-MAR,Marriott International,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",319119763.30117494
+PHM,PulteGroup,Consumer Discretionary,Homebuilding,153229342.25040284
+WSM,"Williams-Sonoma, Inc.",Consumer Discretionary,Homefurnishing Retail,154089994.72152025
+BKNG,Booking Holdings,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",862751964.8587852
+CCL,Carnival Corporation,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",489962652.77014303
+EXPE,Expedia Group,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",312264102.4476481
+HLT,Hilton Worldwide,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",287261906.6037438
+MAR,Marriott International,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",319119764.15297544
 NCLH,Norwegian Cruise Line Holdings,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",287274159.1941596
-RCL,Royal Caribbean Group,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",347058284.0373127
-HAS,Hasbro,Consumer Discretionary,Leisure Products,90080993.83755958
-TSCO,Tractor Supply,Consumer Discretionary,Other Specialty Retail,188629810.3315554
+RCL,Royal Caribbean Group,Consumer Discretionary,"Hotels, Resorts & Cruise Lines",347058283.11572593
+HAS,Hasbro,Consumer Discretionary,Leisure Products,90080993.92499478
+TSCO,Tractor Supply,Consumer Discretionary,Other Specialty Retail,188629809.99023166
 ULTA,Ulta Beauty,Consumer Discretionary,Other Specialty Retail,314614723.3102315
 CMG,Chipotle Mexican Grill,Consumer Discretionary,Restaurants,501396558.058664
-DPZ,Domino's,Consumer Discretionary,Restaurants,222980378.23803094
-DRI,Darden Restaurants,Consumer Discretionary,Restaurants,163173746.9099943
-MCD,McDonald's,Consumer Discretionary,Restaurants,680726012.4520009
-SBUX,Starbucks,Consumer Discretionary,Restaurants,661944911.9511124
-YUM,Yum! Brands,Consumer Discretionary,Restaurants,192527029.1239777
-CVX,Chevron Corporation,Energy,Integrated Oil & Gas,932827767.126026
-XOM,ExxonMobil,Energy,Integrated Oil & Gas,1266164759.0556762
-BKR,Baker Hughes,Energy,Oil & Gas Equipment & Services,183391156.99803522
-HAL,Halliburton,Energy,Oil & Gas Equipment & Services,274907224.90530455
-SLB,Schlumberger,Energy,Oil & Gas Equipment & Services,421663433.32481325
-APA,APA Corporation,Energy,Oil & Gas Exploration & Production,161329195.38506314
-COP,ConocoPhillips,Energy,Oil & Gas Exploration & Production,478916170.2717355
-DVN,Devon Energy,Energy,Oil & Gas Exploration & Production,273172882.3683034
-EOG,EOG Resources,Energy,Oil & Gas Exploration & Production,306160274.64608175
-EQT,EQT Corporation,Energy,Oil & Gas Exploration & Production,200832242.16242015
-FANG,Diamondback Energy,Energy,Oil & Gas Exploration & Production,216338696.63460425
-OXY,Occidental Petroleum,Energy,Oil & Gas Exploration & Production,553394177.9815139
-TPL,Texas Pacific Land Corporation,Energy,Oil & Gas Exploration & Production,57646590.45223114
-MPC,Marathon Petroleum,Energy,Oil & Gas Refining & Marketing,351530413.4148534
-PSX,Phillips 66,Energy,Oil & Gas Refining & Marketing,252132065.49559945
-VLO,Valero Energy,Energy,Oil & Gas Refining & Marketing,322303374.9681559
-KMI,Kinder Morgan,Energy,Oil & Gas Storage & Transportation,212367849.64761093
-OKE,Oneok,Energy,Oil & Gas Storage & Transportation,152739732.59975615
-TRGP,Targa Resources,Energy,Oil & Gas Storage & Transportation,122229977.01920669
-WMB,Williams Companies,Energy,Oil & Gas Storage & Transportation,205369320.19870517
-AMP,Ameriprise Financial,Financials,Asset Management & Custody Banks,158482446.51537034
-APO,Apollo Global Management,Financials,Asset Management & Custody Banks,179059572.7041084
-BLK,BlackRock,Financials,Asset Management & Custody Banks,410430151.337412
-BNY,BNY Mellon,Financials,Asset Management & Custody Banks,222273492.77802598
-BX,Blackstone Inc.,Financials,Asset Management & Custody Banks,316754462.10510874
-KKR,KKR & Co.,Financials,Asset Management & Custody Banks,217717270.12421066
-STT,State Street Corporation,Financials,Asset Management & Custody Banks,161598001.8689842
-AXP,American Express,Financials,Consumer Finance,510081171.6142058
-COF,Capital One,Financials,Consumer Finance,337742659.17698914
-SYF,Synchrony Financial,Financials,Consumer Finance,180159049.29030553
-BAC,Bank of America,Financials,Diversified Banks,1526403594.8092263
-C,Citigroup,Financials,Diversified Banks,940099626.5370237
-JPM,JPMorgan Chase,Financials,Diversified Banks,1592060737.1374593
-PNC,PNC Financial Services,Financials,Diversified Banks,276027310.9836766
-TFC,Truist Financial,Financials,Diversified Banks,241486337.482998
-USB,U.S. Bancorp,Financials,Diversified Banks,307516055.95150274
-WFC,Wells Fargo,Financials,Diversified Banks,958413037.6669773
-CME,CME Group,Financials,Financial Exchanges & Data,289817490.2009315
-ICE,Intercontinental Exchange,Financials,Financial Exchanges & Data,285175893.95711845
-MCO,Moody's Corporation,Financials,Financial Exchanges & Data,226963390.47531295
-MSCI,MSCI,Financials,Financial Exchanges & Data,192248522.37475643
-SPGI,S&P Global,Financials,Financial Exchanges & Data,458497802.3475562
-AJG,Arthur J. Gallagher & Co.,Financials,Insurance Brokers,168690356.624431
-AON,Aon plc,Financials,Insurance Brokers,282033328.0596568
-MRSH,Marsh McLennan,Financials,Insurance Brokers,253992728.71708027
-WTW,Willis Towers Watson,Financials,Insurance Brokers,154845921.93974528
-GS,Goldman Sachs,Financials,Investment Banking & Brokerage,803872028.9814723
-MS,Morgan Stanley,Financials,Investment Banking & Brokerage,576129620.058957
-SCHW,Charles Schwab Corporation,Financials,Investment Banking & Brokerage,512934871.1897573
-AFL,Aflac,Financials,Life & Health Insurance,159477072.12619683
-MET,MetLife,Financials,Life & Health Insurance,229949044.06894705
+DPZ,Domino's,Consumer Discretionary,Restaurants,222980375.90699968
+DRI,Darden Restaurants,Consumer Discretionary,Restaurants,163173747.35040775
+MCD,McDonald's,Consumer Discretionary,Restaurants,680726011.5902218
+SBUX,Starbucks,Consumer Discretionary,Restaurants,661944910.773617
+YUM,Yum! Brands,Consumer Discretionary,Restaurants,192527028.58876932
+CVX,Chevron Corporation,Energy,Integrated Oil & Gas,932827767.4388905
+XOM,ExxonMobil,Energy,Integrated Oil & Gas,1266164753.6250453
+BKR,Baker Hughes,Energy,Oil & Gas Equipment & Services,183391156.60769942
+HAL,Halliburton,Energy,Oil & Gas Equipment & Services,274907226.0312494
+SLB,Schlumberger,Energy,Oil & Gas Equipment & Services,421663432.1050473
+APA,APA Corporation,Energy,Oil & Gas Exploration & Production,161329196.04931334
+COP,ConocoPhillips,Energy,Oil & Gas Exploration & Production,478916169.491912
+DVN,Devon Energy,Energy,Oil & Gas Exploration & Production,273172881.73616195
+EOG,EOG Resources,Energy,Oil & Gas Exploration & Production,306160274.11134726
+EQT,EQT Corporation,Energy,Oil & Gas Exploration & Production,200832241.91016954
+FANG,Diamondback Energy,Energy,Oil & Gas Exploration & Production,216338697.0396511
+OXY,Occidental Petroleum,Energy,Oil & Gas Exploration & Production,553394175.4693968
+TPL,Texas Pacific Land Corporation,Energy,Oil & Gas Exploration & Production,57646590.207534835
+MPC,Marathon Petroleum,Energy,Oil & Gas Refining & Marketing,351530413.3547664
+PSX,Phillips 66,Energy,Oil & Gas Refining & Marketing,252132064.64539155
+VLO,Valero Energy,Energy,Oil & Gas Refining & Marketing,322303373.5679876
+KMI,Kinder Morgan,Energy,Oil & Gas Storage & Transportation,212367848.6125398
+OKE,Oneok,Energy,Oil & Gas Storage & Transportation,152739732.711189
+TRGP,Targa Resources,Energy,Oil & Gas Storage & Transportation,122229977.47541775
+WMB,Williams Companies,Energy,Oil & Gas Storage & Transportation,205369318.84788838
+AMP,Ameriprise Financial,Financials,Asset Management & Custody Banks,158482446.68708014
+APO,Apollo Global Management,Financials,Asset Management & Custody Banks,179059572.27756736
+BLK,BlackRock,Financials,Asset Management & Custody Banks,410430151.36876214
+BNY,BNY Mellon,Financials,Asset Management & Custody Banks,222273493.30353862
+BX,Blackstone Inc.,Financials,Asset Management & Custody Banks,316754461.90948904
+KKR,KKR & Co.,Financials,Asset Management & Custody Banks,217717269.55898792
+STT,State Street Corporation,Financials,Asset Management & Custody Banks,161598001.94920996
+AXP,American Express,Financials,Consumer Finance,510081171.90973127
+COF,Capital One,Financials,Consumer Finance,337742661.4332731
+SYF,Synchrony Financial,Financials,Consumer Finance,180159048.6528436
+BAC,Bank of America,Financials,Diversified Banks,1526403602.8601196
+C,Citigroup,Financials,Diversified Banks,940099631.6070523
+JPM,JPMorgan Chase,Financials,Diversified Banks,1592060738.4509299
+PNC,PNC Financial Services,Financials,Diversified Banks,276027310.6454202
+TFC,Truist Financial,Financials,Diversified Banks,241486337.40577263
+USB,U.S. Bancorp,Financials,Diversified Banks,307516055.115856
+WFC,Wells Fargo,Financials,Diversified Banks,958413036.9633617
+CME,CME Group,Financials,Financial Exchanges & Data,289817491.3024001
+ICE,Intercontinental Exchange,Financials,Financial Exchanges & Data,285175895.05547327
+MCO,Moody's Corporation,Financials,Financial Exchanges & Data,226963389.5037847
+MSCI,MSCI,Financials,Financial Exchanges & Data,192248523.88741556
+SPGI,S&P Global,Financials,Financial Exchanges & Data,458497802.1833265
+AJG,Arthur J. Gallagher & Co.,Financials,Insurance Brokers,168690356.4579077
+AON,Aon plc,Financials,Insurance Brokers,282033329.3477195
+MRSH,Marsh McLennan,Financials,Insurance Brokers,253992728.4756765
+WTW,Willis Towers Watson,Financials,Insurance Brokers,154845922.04936543
+GS,Goldman Sachs,Financials,Investment Banking & Brokerage,803872028.046194
+MS,Morgan Stanley,Financials,Investment Banking & Brokerage,576129616.2262961
+SCHW,Charles Schwab Corporation,Financials,Investment Banking & Brokerage,512934869.8372576
+AFL,Aflac,Financials,Life & Health Insurance,159477071.2174947
+MET,MetLife,Financials,Life & Health Insurance,229949043.0132485
 BRK-B,Berkshire Hathaway,Financials,Multi-Sector Holdings,1274542906.3254967
-AIG,American International Group,Financials,Multi-line Insurance,243386734.98306355
-ALL,Allstate,Financials,Property & Casualty Insurance,205182586.7942432
-CB,Chubb Limited,Financials,Property & Casualty Insurance,311763515.8793977
-PGR,Progressive Corporation,Financials,Property & Casualty Insurance,319887908.50266796
-TRV,Travelers Companies (The),Financials,Property & Casualty Insurance,214482986.7897161
-CFG,Citizens Financial Group,Financials,Regional Banks,153444845.34628668
-FITB,Fifth Third Bancorp,Financials,Regional Banks,153979841.76836282
-HBAN,Huntington Bancshares,Financials,Regional Banks,167971379.92271152
-KEY,KeyCorp,Financials,Regional Banks,166716891.559579
-RF,Regions Financial Corporation,Financials,Regional Banks,161804903.21029577
+AIG,American International Group,Financials,Multi-line Insurance,243386736.03424054
+ALL,Allstate,Financials,Property & Casualty Insurance,205182586.75937203
+CB,Chubb Limited,Financials,Property & Casualty Insurance,311763515.5200193
+PGR,Progressive Corporation,Financials,Property & Casualty Insurance,319887908.04255456
+TRV,Travelers Companies (The),Financials,Property & Casualty Insurance,214482986.5955203
+CFG,Citizens Financial Group,Financials,Regional Banks,153444844.43061686
+FITB,Fifth Third Bancorp,Financials,Regional Banks,153979841.54963169
+HBAN,Huntington Bancshares,Financials,Regional Banks,167971380.09289348
+KEY,KeyCorp,Financials,Regional Banks,166716892.62543607
+RF,Regions Financial Corporation,Financials,Regional Banks,161804904.4806217
 CPAY,Corpay,Financials,Transaction & Payment Processing Services,152974340.14996117
-FIS,Fidelity National Information Services,Financials,Transaction & Payment Processing Services,299735506.0365831
+FIS,Fidelity National Information Services,Financials,Transaction & Payment Processing Services,299735506.8011948
 FISV,Fiserv,Financials,Transaction & Payment Processing Services,408491354.96051586
-GPN,Global Payments,Financials,Transaction & Payment Processing Services,231566567.89674532
-MA,Mastercard,Financials,Transaction & Payment Processing Services,1088579495.4708717
-PYPL,PayPal,Financials,Transaction & Payment Processing Services,1137680305.0600433
-V,Visa Inc.,Financials,Transaction & Payment Processing Services,1539893742.132423
+GPN,Global Payments,Financials,Transaction & Payment Processing Services,231566569.19943497
+MA,Mastercard,Financials,Transaction & Payment Processing Services,1088579496.9435706
+PYPL,PayPal,Financials,Transaction & Payment Processing Services,1137680305.7301614
+V,Visa Inc.,Financials,Transaction & Payment Processing Services,1539893740.1100407
 XYZ,"Block, Inc.",Financials,Transaction & Payment Processing Services,1012416767.6253817
-ABBV,AbbVie,Health Care,Biotechnology,707092482.9261881
-AMGN,Amgen,Health Care,Biotechnology,576413372.0744604
+ABBV,AbbVie,Health Care,Biotechnology,707092481.7947197
+AMGN,Amgen,Health Care,Biotechnology,576413372.4160088
 BIIB,Biogen,Health Care,Biotechnology,372761946.3705422
-GILD,Gilead Sciences,Health Care,Biotechnology,517827326.5384237
+GILD,Gilead Sciences,Health Care,Biotechnology,517827321.9195445
 INCY,Incyte,Health Care,Biotechnology,130682457.36498708
-REGN,Regeneron Pharmaceuticals,Health Care,Biotechnology,453807918.92038673
+REGN,Regeneron Pharmaceuticals,Health Care,Biotechnology,453807919.5075837
 VRTX,Vertex Pharmaceuticals,Health Care,Biotechnology,417661974.74294317
-CAH,Cardinal Health,Health Care,Health Care Distributors,177077058.83464256
-COR,Cencora,Health Care,Health Care Distributors,193095769.79631367
-MCK,McKesson,Health Care,Health Care Distributors,326477495.7069072
-ABT,Abbott Laboratories,Health Care,Health Care Equipment,519531425.6732061
-BAX,Baxter International,Health Care,Health Care Equipment,188601118.73904774
-BDX,Becton Dickinson,Health Care,Health Care Equipment,313890391.90614665
+CAH,Cardinal Health,Health Care,Health Care Distributors,177077057.93256614
+COR,Cencora,Health Care,Health Care Distributors,193095768.8659991
+MCK,McKesson,Health Care,Health Care Distributors,326477499.0001221
+ABT,Abbott Laboratories,Health Care,Health Care Equipment,519531424.83198965
+BAX,Baxter International,Health Care,Health Care Equipment,188601119.58961982
+BDX,Becton Dickinson,Health Care,Health Care Equipment,313890390.7846684
 BSX,Boston Scientific,Health Care,Health Care Equipment,389191182.352869
 DXCM,Dexcom,Health Care,Health Care Equipment,288252734.28913856
 EW,Edwards Lifesciences,Health Care,Health Care Equipment,268763722.7064344
 IDXX,Idexx Laboratories,Health Care,Health Care Equipment,200193181.68375033
 ISRG,Intuitive Surgical,Health Care,Health Care Equipment,529992489.1304896
-MDT,Medtronic,Health Care,Health Care Equipment,463712755.8756579
+MDT,Medtronic,Health Care,Health Care Equipment,463712757.2510506
 PODD,Insulet Corporation,Health Care,Health Care Equipment,127071181.2447672
-RMD,ResMed,Health Care,Health Care Equipment,135409310.4358721
-SYK,Stryker Corporation,Health Care,Health Care Equipment,320650610.74250376
-ZBH,Zimmer Biomet,Health Care,Health Care Equipment,165514241.25849652
-HCA,HCA Healthcare,Health Care,Health Care Facilities,312189128.995328
-CI,Cigna,Health Care,Health Care Services,417410743.78210735
-CVS,CVS Health,Health Care,Health Care Services,501755410.63622004
-DGX,Quest Diagnostics,Health Care,Health Care Services,127500972.4803626
-LH,Labcorp,Health Care,Health Care Services,145604614.62698418
+RMD,ResMed,Health Care,Health Care Equipment,135409309.914148
+SYK,Stryker Corporation,Health Care,Health Care Equipment,320650612.2419459
+ZBH,Zimmer Biomet,Health Care,Health Care Equipment,165514241.7283308
+HCA,HCA Healthcare,Health Care,Health Care Facilities,312189129.06480354
+CI,Cigna,Health Care,Health Care Services,417410743.5757989
+CVS,CVS Health,Health Care,Health Care Services,501755409.01657796
+DGX,Quest Diagnostics,Health Care,Health Care Services,127500972.43290594
+LH,Labcorp,Health Care,Health Care Services,145604615.1211635
 ALGN,Align Technology,Health Care,Health Care Supplies,268007550.91880453
-COO,Cooper Companies (The),Health Care,Health Care Supplies,114200845.3284249
-WST,West Pharmaceutical Services,Health Care,Health Care Supplies,121204862.48667948
+COO,Cooper Companies (The),Health Care,Health Care Supplies,114200845.28627276
+WST,West Pharmaceutical Services,Health Care,Health Care Supplies,121204863.017744
 VEEV,Veeva Systems,Health Care,Health Care Technology,206877561.58502445
-A,Agilent Technologies,Health Care,Life Sciences Tools & Services,195007430.99664775
-DHR,Danaher Corporation,Health Care,Life Sciences Tools & Services,587269431.1943321
+A,Agilent Technologies,Health Care,Life Sciences Tools & Services,195007431.5370739
+DHR,Danaher Corporation,Health Care,Life Sciences Tools & Services,587269432.6442156
 ILMN,"Illumina, Inc.",Health Care,Life Sciences Tools & Services,293944966.0571375
 IQV,IQVIA,Health Care,Life Sciences Tools & Services,216079145.01217467
 MTD,Mettler Toledo,Health Care,Life Sciences Tools & Services,145207434.1010768
-TMO,Thermo Fisher Scientific,Health Care,Life Sciences Tools & Services,680505586.5132793
+TMO,Thermo Fisher Scientific,Health Care,Life Sciences Tools & Services,680505587.6208194
 WAT,Waters Corporation,Health Care,Life Sciences Tools & Services,132402831.34937507
 CNC,Centene Corporation,Health Care,Managed Health Care,264795478.81395867
-ELV,Elevance Health,Health Care,Managed Health Care,453843216.52387345
-HUM,Humana,Health Care,Managed Health Care,397977736.92999554
-UNH,UnitedHealth Group,Health Care,Managed Health Care,1497500271.8209977
-BMY,Bristol Myers Squibb,Health Care,Pharmaceuticals,559576977.7297864
-JNJ,Johnson & Johnson,Health Care,Pharmaceuticals,1070822270.6081297
-LLY,Lilly (Eli),Health Care,Pharmaceuticals,1225274456.1221476
-MRK,Merck & Co.,Health Care,Pharmaceuticals,789471735.8841376
-PFE,Pfizer,Health Care,Pharmaceuticals,839196018.8773506
-VTRS,Viatris,Health Care,Pharmaceuticals,111998358.19987698
-ZTS,Zoetis,Health Care,Pharmaceuticals,308385524.42573625
+ELV,Elevance Health,Health Care,Managed Health Care,453843216.61404026
+HUM,Humana,Health Care,Managed Health Care,397977738.1579238
+UNH,UnitedHealth Group,Health Care,Managed Health Care,1497500268.3515093
+BMY,Bristol Myers Squibb,Health Care,Pharmaceuticals,559576976.4686817
+JNJ,Johnson & Johnson,Health Care,Pharmaceuticals,1070822278.8522799
+LLY,Lilly (Eli),Health Care,Pharmaceuticals,1225274454.7453399
+MRK,Merck & Co.,Health Care,Pharmaceuticals,789471739.4253378
+PFE,Pfizer,Health Care,Pharmaceuticals,839196015.5533711
+VTRS,Viatris,Health Care,Pharmaceuticals,111998357.85963193
+ZTS,Zoetis,Health Care,Pharmaceuticals,308385523.6773395
 AXON,Axon Enterprise,Industrials,Aerospace & Defense,136809597.8458977
-BA,Boeing,Industrials,Aerospace & Defense,2050758525.4094374
-GD,General Dynamics,Industrials,Aerospace & Defense,248930847.47657543
-GE,GE Aerospace,Industrials,Aerospace & Defense,846086820.7906181
-HWM,Howmet Aerospace,Industrials,Aerospace & Defense,149748536.69516838
-LHX,L3Harris,Industrials,Aerospace & Defense,209743463.58114564
-LMT,Lockheed Martin,Industrials,Aerospace & Defense,478324094.0652279
-NOC,Northrop Grumman,Industrials,Aerospace & Defense,330625668.04014266
-RTX,RTX Corporation,Industrials,Aerospace & Defense,512763324.94926125
-TDG,TransDigm Group,Industrials,Aerospace & Defense,187540748.5295609
-DE,Deere & Company,Industrials,Agricultural & Farm Machinery,471847377.0202725
-FDX,FedEx,Industrials,Air Freight & Logistics,449089672.6453389
-UPS,United Parcel Service,Industrials,Air Freight & Logistics,424357627.1603099
-JCI,Johnson Controls,Industrials,Building Products,245226641.8331833
-TT,Trane Technologies,Industrials,Building Products,241381684.07891482
-ODFL,Old Dominion,Industrials,Cargo Ground Transportation,190382115.69614702
-PWR,Quanta Services,Industrials,Construction & Engineering,150817643.2166137
-CAT,Caterpillar Inc.,Industrials,Construction Machinery & Heavy Transportation Equipment,675190221.1703444
-CMI,Cummins,Industrials,Construction Machinery & Heavy Transportation Equipment,228663381.29578236
-PCAR,Paccar,Industrials,Construction Machinery & Heavy Transportation Equipment,161841766.2111669
+BA,Boeing,Industrials,Aerospace & Defense,2050758526.9806523
+GD,General Dynamics,Industrials,Aerospace & Defense,248930848.51549298
+GE,GE Aerospace,Industrials,Aerospace & Defense,846086818.7157501
+HWM,Howmet Aerospace,Industrials,Aerospace & Defense,149748535.67718455
+LHX,L3Harris,Industrials,Aerospace & Defense,209743463.89310095
+LMT,Lockheed Martin,Industrials,Aerospace & Defense,478324090.3512733
+NOC,Northrop Grumman,Industrials,Aerospace & Defense,330625668.03131175
+RTX,RTX Corporation,Industrials,Aerospace & Defense,512763327.9054582
+TDG,TransDigm Group,Industrials,Aerospace & Defense,187540748.73369154
+DE,Deere & Company,Industrials,Agricultural & Farm Machinery,471847377.37268233
+FDX,FedEx,Industrials,Air Freight & Logistics,449089672.589237
+UPS,United Parcel Service,Industrials,Air Freight & Logistics,424357626.0312037
+JCI,Johnson Controls,Industrials,Building Products,245226641.7598696
+TT,Trane Technologies,Industrials,Building Products,241381683.78589585
+ODFL,Old Dominion,Industrials,Cargo Ground Transportation,190382115.7294137
+PWR,Quanta Services,Industrials,Construction & Engineering,150817641.80002537
+CAT,Caterpillar Inc.,Industrials,Construction Machinery & Heavy Transportation Equipment,675190221.5438666
+CMI,Cummins,Industrials,Construction Machinery & Heavy Transportation Equipment,228663381.33103094
+PCAR,Paccar,Industrials,Construction Machinery & Heavy Transportation Equipment,161841766.80128914
 CPRT,Copart,Industrials,Diversified Support Services,161127975.42745924
-CTAS,Cintas,Industrials,Diversified Support Services,181939854.86006638
-AME,Ametek,Industrials,Electrical Components & Equipment,136618307.46469697
-EMR,Emerson Electric,Industrials,Electrical Components & Equipment,240447673.12444818
-ETN,Eaton Corporation,Industrials,Electrical Components & Equipment,357438616.0663004
-ROK,Rockwell Automation,Industrials,Electrical Components & Equipment,186908007.9845639
-RSG,Republic Services,Industrials,Environmental & Facilities Services,147746892.88643152
-WM,Waste Management,Industrials,Environmental & Facilities Services,234747851.44500113
+CTAS,Cintas,Industrials,Diversified Support Services,181939853.92720026
+AME,Ametek,Industrials,Electrical Components & Equipment,136618307.4528177
+EMR,Emerson Electric,Industrials,Electrical Components & Equipment,240447672.879678
+ETN,Eaton Corporation,Industrials,Electrical Components & Equipment,357438616.3182176
+ROK,Rockwell Automation,Industrials,Electrical Components & Equipment,186908008.58787158
+RSG,Republic Services,Industrials,Environmental & Facilities Services,147746892.51117238
+WM,Waste Management,Industrials,Environmental & Facilities Services,234747851.86022872
 GNRC,Generac,Industrials,Heavy Electrical Equipment,137448512.59609184
-ADP,Automatic Data Processing,Industrials,Human Resource & Employment Services,341146976.58262235
-PAYX,Paychex,Industrials,Human Resource & Employment Services,171036958.30643898
-DD,DuPont,Industrials,Industrial Conglomerates,291919928.93978715
-HON,Honeywell Technologies,Industrials,Industrial Conglomerates,525303775.92485875
-MMM,3M,Industrials,Industrial Conglomerates,422379495.8186586
-FTV,Fortive,Industrials,Industrial Machinery & Supplies & Components,158140292.17530936
-GWW,W. W. Grainger,Industrials,Industrial Machinery & Supplies & Components,173135751.71560028
-IR,Ingersoll Rand,Industrials,Industrial Machinery & Supplies & Components,123696198.56367558
-ITW,Illinois Tool Works,Industrials,Industrial Machinery & Supplies & Components,207444998.93616557
-PH,Parker Hannifin,Industrials,Industrial Machinery & Supplies & Components,250635506.2134941
-SWK,Stanley Black & Decker,Industrials,Industrial Machinery & Supplies & Components,148237300.67433158
-DAL,Delta Air Lines,Industrials,Passenger Airlines,465983943.05683756
-LUV,Southwest Airlines,Industrials,Passenger Airlines,285774772.8061924
+ADP,Automatic Data Processing,Industrials,Human Resource & Employment Services,341146975.45047814
+PAYX,Paychex,Industrials,Human Resource & Employment Services,171036958.1496035
+DD,DuPont,Industrials,Industrial Conglomerates,291919926.3712832
+HON,Honeywell Technologies,Industrials,Industrial Conglomerates,525303775.74243087
+MMM,3M,Industrials,Industrial Conglomerates,422379496.4021659
+FTV,Fortive,Industrials,Industrial Machinery & Supplies & Components,158140290.96618426
+GWW,W. W. Grainger,Industrials,Industrial Machinery & Supplies & Components,173135752.76912463
+IR,Ingersoll Rand,Industrials,Industrial Machinery & Supplies & Components,123696198.15699731
+ITW,Illinois Tool Works,Industrials,Industrial Machinery & Supplies & Components,207445000.82246286
+PH,Parker Hannifin,Industrials,Industrial Machinery & Supplies & Components,250635506.22856876
+SWK,Stanley Black & Decker,Industrials,Industrial Machinery & Supplies & Components,148237301.93045804
+DAL,Delta Air Lines,Industrials,Passenger Airlines,465983941.6667641
+LUV,Southwest Airlines,Industrials,Passenger Airlines,285774773.54402477
 UAL,United Airlines Holdings,Industrials,Passenger Airlines,511806138.899864
-CSX,CSX Corporation,Industrials,Rail Transportation,378900742.3320342
-NSC,Norfolk Southern,Industrials,Rail Transportation,279727298.0276319
-UNP,Union Pacific Corporation,Industrials,Rail Transportation,555027805.4773629
-EFX,Equifax,Industrials,Research & Consulting Services,173220820.74845117
-VRSK,Verisk Analytics,Industrials,Research & Consulting Services,162658310.39588648
-FAST,Fastenal,Industrials,Trading Companies & Distributors,163398281.0799598
-URI,United Rentals,Industrials,Trading Companies & Distributors,264923712.91767067
+CSX,CSX Corporation,Industrials,Rail Transportation,378900741.6669825
+NSC,Norfolk Southern,Industrials,Rail Transportation,279727298.34674025
+UNP,Union Pacific Corporation,Industrials,Rail Transportation,555027805.4057049
+EFX,Equifax,Industrials,Research & Consulting Services,173220821.39059317
+VRSK,Verisk Analytics,Industrials,Research & Consulting Services,162658311.66459155
+FAST,Fastenal,Industrials,Trading Companies & Distributors,163398282.16166735
+URI,United Rentals,Industrials,Trading Companies & Distributors,264923712.1347598
 ADBE,Adobe Inc.,Information Technology,Application Software,1202469781.888642
 ADSK,Autodesk,Information Technology,Application Software,342476124.5492572
 CDNS,Cadence Design Systems,Information Technology,Application Software,276075195.86977553
-CRM,Salesforce,Information Technology,Application Software,1305013326.5625904
-INTU,Intuit,Information Technology,Application Software,610349102.1077682
+CRM,Salesforce,Information Technology,Application Software,1305013328.1834874
+INTU,Intuit,Information Technology,Application Software,610349103.3545716
 OKTA,"Okta, Inc.",Information Technology,Application Software,245279796.85752687
-ORCL,Oracle Corporation,Information Technology,Application Software,1134984594.550932
+ORCL,Oracle Corporation,Information Technology,Application Software,1134984593.7721598
 SNPS,Synopsys,Information Technology,Application Software,331893603.676801
 WDAY,"Workday, Inc.",Information Technology,Application Software,426230872.81438446
 ANET,Arista Networks,Information Technology,Communications Equipment,393607119.51061565
-CSCO,Cisco,Information Technology,Communications Equipment,909848160.6869416
-MSI,Motorola Solutions,Information Technology,Communications Equipment,197211912.58891654
-APH,Amphenol,Information Technology,Electronic Components,254458412.241587
-GLW,Corning Inc.,Information Technology,Electronic Components,177143471.17260304
-ROP,Roper Technologies,Information Technology,Electronic Equipment & Instruments,214590801.88831508
-TEL,TE Connectivity,Information Technology,Electronic Manufacturing Services,190425056.24092937
-ACN,Accenture,Information Technology,IT Consulting & Other Services,572957220.927918
-CTSH,Cognizant,Information Technology,IT Consulting & Other Services,234906629.04030418
-IBM,IBM,Information Technology,IT Consulting & Other Services,630620518.8619918
-AMAT,Applied Materials,Information Technology,Semiconductor Materials & Equipment,803785347.4142879
-KLAC,KLA Corporation,Information Technology,Semiconductor Materials & Equipment,418445529.76289004
-LRCX,Lam Research,Information Technology,Semiconductor Materials & Equipment,699877400.419749
-TER,Teradyne,Information Technology,Semiconductor Materials & Equipment,190287422.47578213
-ADI,Analog Devices,Information Technology,Semiconductors,469202621.1219141
+CSCO,Cisco,Information Technology,Communications Equipment,909848158.751512
+MSI,Motorola Solutions,Information Technology,Communications Equipment,197211912.62593836
+APH,Amphenol,Information Technology,Electronic Components,254458412.08963382
+GLW,Corning Inc.,Information Technology,Electronic Components,177143470.32997105
+ROP,Roper Technologies,Information Technology,Electronic Equipment & Instruments,214590801.3847807
+TEL,TE Connectivity,Information Technology,Electronic Manufacturing Services,190425056.07663515
+ACN,Accenture,Information Technology,IT Consulting & Other Services,572957221.5608386
+CTSH,Cognizant,Information Technology,IT Consulting & Other Services,234906629.6452233
+IBM,IBM,Information Technology,IT Consulting & Other Services,630620518.6247338
+AMAT,Applied Materials,Information Technology,Semiconductor Materials & Equipment,803785347.6752415
+KLAC,KLA Corporation,Information Technology,Semiconductor Materials & Equipment,418445529.8803653
+LRCX,Lam Research,Information Technology,Semiconductor Materials & Equipment,699877400.7266213
+TER,Teradyne,Information Technology,Semiconductor Materials & Equipment,190287422.3603074
+ADI,Analog Devices,Information Technology,Semiconductors,469202623.86443764
 AMD,Advanced Micro Devices,Information Technology,Semiconductors,5160383204.322668
-AVGO,Broadcom,Information Technology,Semiconductors,2133332277.7418103
+AVGO,Broadcom,Information Technology,Semiconductors,2133332289.3097706
 FSLR,First Solar,Information Technology,Semiconductors,272235684.97578937
-INTC,Intel,Information Technology,Semiconductors,1497304532.9902773
-MCHP,Microchip Technology,Information Technology,Semiconductors,315899211.2534152
-MPWR,Monolithic Power Systems,Information Technology,Semiconductors,212433502.9407404
-MRVL,Marvell Technology,Information Technology,Semiconductors,566754223.386266
-MU,Micron Technology,Information Technology,Semiconductors,1689678203.3853393
-NVDA,Nvidia,Information Technology,Semiconductors,13479220045.098684
-NXPI,NXP Semiconductors,Information Technology,Semiconductors,437302131.81310123
+INTC,Intel,Information Technology,Semiconductors,1497304531.1168685
+MCHP,Microchip Technology,Information Technology,Semiconductors,315899211.4626566
+MPWR,Monolithic Power Systems,Information Technology,Semiconductors,212433504.01961383
+MRVL,Marvell Technology,Information Technology,Semiconductors,566754223.9504482
+MU,Micron Technology,Information Technology,Semiconductors,1689678207.825588
+NVDA,Nvidia,Information Technology,Semiconductors,13479220115.57179
+NXPI,NXP Semiconductors,Information Technology,Semiconductors,437302135.7429653
 ON,ON Semiconductor,Information Technology,Semiconductors,316806160.12245995
-QCOM,Qualcomm,Information Technology,Semiconductors,1014861570.0714219
-SWKS,Skyworks Solutions,Information Technology,Semiconductors,199508655.4625424
-TXN,Texas Instruments,Information Technology,Semiconductors,729258960.075063
+QCOM,Qualcomm,Information Technology,Semiconductors,1014861567.538353
+SWKS,Skyworks Solutions,Information Technology,Semiconductors,199508657.1909602
+TXN,Texas Instruments,Information Technology,Semiconductors,729258955.5900552
 FTNT,Fortinet,Information Technology,Systems Software,273066426.7830972
-MSFT,Microsoft,Information Technology,Systems Software,6453474522.147037
+MSFT,Microsoft,Information Technology,Systems Software,6453474500.448429
 NOW,ServiceNow,Information Technology,Systems Software,759481523.82609
 PANW,Palo Alto Networks,Information Technology,Systems Software,658246792.3806872
 TWLO,Twilio,Information Technology,Systems Software,379934285.48151547
-AAPL,Apple Inc.,Information Technology,"Technology Hardware, Storage & Peripherals",10203953887.622799
-DELL,Dell Technologies,Information Technology,"Technology Hardware, Storage & Peripherals",360322311.05328107
-HPE,Hewlett Packard Enterprise,Information Technology,"Technology Hardware, Storage & Peripherals",190923258.6401447
-HPQ,HP Inc.,Information Technology,"Technology Hardware, Storage & Peripherals",211660399.04720017
+AAPL,Apple Inc.,Information Technology,"Technology Hardware, Storage & Peripherals",10203953869.204351
+DELL,Dell Technologies,Information Technology,"Technology Hardware, Storage & Peripherals",360322311.4882696
+HPE,Hewlett Packard Enterprise,Information Technology,"Technology Hardware, Storage & Peripherals",190923259.0483558
+HPQ,HP Inc.,Information Technology,"Technology Hardware, Storage & Peripherals",211660398.05844942
 SMCI,Supermicro,Information Technology,"Technology Hardware, Storage & Peripherals",914513869.4903364
-STX,Seagate Technology,Information Technology,"Technology Hardware, Storage & Peripherals",214606619.4800987
-WDC,Western Digital,Information Technology,"Technology Hardware, Storage & Peripherals",319795500.47734386
+STX,Seagate Technology,Information Technology,"Technology Hardware, Storage & Peripherals",214606618.58181047
+WDC,Western Digital,Information Technology,"Technology Hardware, Storage & Peripherals",319795500.2548855
