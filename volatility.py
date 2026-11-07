@@ -29,11 +29,13 @@ def main():
     # Calculate 30-day rolling volatility
     volatility = returns.rolling(
         window=WINDOW,
-        min_periods=WINDOW
+        min_periods=1
     ).std()
 
     # Annualize volatility
     annualized_volatility = volatility * np.sqrt(TRADING_DAYS)
+    print(volatility)
+    annualized_volatility.to_csv("data/volatility.csv")
 
     # Normalize across all stocks using a shared scale
     # Use the 1st and 99th percentiles to reduce outlier effects
