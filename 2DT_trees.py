@@ -9,8 +9,6 @@ import sys
 ./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2DT_trees.py
 """
 
-
-
 from build_terrain import show_terrain_time_trees
 from MDS import mds_rows
 
@@ -68,6 +66,7 @@ def beta_around_peak(points, px, py, radius=cell_size * 0.1):
 
 # ---------------- per-stock positions and returns ----------------
 sector_data = np.empty((len(sectors), len(time_values)), dtype=object)
+max_beta = -np.inf
 
 for j, t in enumerate(time_values):
     start_time = t - pd.Timedelta(days=window)
@@ -94,14 +93,23 @@ for j, t in enumerate(time_values):
         port = np.nansum(subset_returns * caps_b, axis=1) / (mask * caps_b).sum(axis=1)
 
         port_dev = port - port.mean()
-        port_var = np.var(port)
+        port_var = np.var(port) + 1e-7
 
         betas = np.zeros(subset_returns.shape[1])
-        for j in range(subset_returns.shape[1]):
-            r = subset_returns[:, j]                 # ticker j's time series
-            valid = ~np.isnan(r)
-            cov = np.cov(r[valid], port[valid])[0, 1]   # off-diagonal of cov matrix
-            betas[j] = cov / port_var # one beta val per stock in this sector/timestamp
+        for k in range(subset_returns.shape[1]):
+            r = subset_returns[:, k]
+            valid = np.isfinite(r) & np.isfinite(port)
+            if valid.sum() < 2:
+                betas[k] = np.nan
+                continue
+            cov = np.cov(r[valid], port[valid])[0, 1]
+            if not np.isfinite(cov):
+                betas[k] = np.nan
+                continue
+
+            betas[k] = cov / port_var
+            #print(betas[k])
+            max_beta = max(max_beta, betas[k])
 
         corr = np.corrcoef(subset_returns, rowvar=False)
         res_mds, _ = mds_rows(corr) # (n, 2) in [-1, 1]
@@ -111,8 +119,27 @@ for j, t in enumerate(time_values):
         xy = np.empty_like(res_mds, dtype=float)
         xy[:, 0] = cx + margin + (res_mds[:, 0] + 1) / 2 * usable
         xy[:, 1] = cy + margin + (res_mds[:, 1] + 1) / 2 * usable
-        sector_data[i, j] = (cx, cy, xy, mean_returns_nonweighted, betas)
 
+        beta_points = np.column_stack([
+            xy[:, 0],
+            xy[:, 1],
+            betas
+        ])
+
+        #print('beta points:'); print(beta_points)
+
+        sector_data[i, j] = (cx, cy, xy, mean_returns_nonweighted, betas, beta_points)
+
+        """
+        
+        beta points will look like
+                [
+            [x_asset_1, y_asset_1, beta_asset_1],
+            [x_asset_2, y_asset_2, beta_asset_2],
+            [x_asset_3, y_asset_3, beta_asset_3],
+            ...
+        ]
+        """
 # ---------------- trees ----------------
 rng = np.random.default_rng(0)
 
@@ -176,55 +203,52 @@ for j in range(len(time_values)):
             frame.extend((x, y, zz, side_size) for x, y, zz in zip(sx[ok], sy[ok], z[ok]))
     trees.append(np.array(frame).reshape(-1, 4))
 
+print("test")
 # clouds
-
 # ---------------- clouds ----------------
+cloud_sigma = 1.5      # spread in terrain units: larger = wider, softer clouds
+#cloud_cutoff = 0.02    # zero out very faint tails
 
-# One cloud value per (x, y) grid position
-cloud_values = np.zeros(GX.shape)
+# one 2D cloud field per time step, same shape as GZ: (nx, ny, nt)
+cloud_values_grid = np.zeros(GZ.shape)
 
-# Reproducible cloud locations
-cloud_rng = np.random.default_rng(42)
+for j in range(len(time_values)):
+    frame = np.zeros(GX.shape)
+    for i in range(len(sectors)):
+        pts = sector_data[i, j][-1]            # columns: x, y, beta
+        for px, py, b in pts:
+            if not np.isfinite(b):
+                continue
+            b = max(b / max_beta, 0.0)         # normalise; drop negative betas
+            if b == 0.0:
+                continue
+            d2 = (GX - px) ** 2 + (GY - py) ** 2
+            frame = np.maximum(frame, b * np.exp(-d2 / (2 * cloud_sigma ** 2)))
+    #frame[frame < cloud_cutoff] = 0.0
+    cloud_values_grid[:, :, j] = frame
 
-# Generate several cloud formations
-n_clouds = 8
+print("test2")
 
-for _ in range(n_clouds):
+# print(cloud_values_grid.shape)
 
-    # Random cloud centre
-    cx = cloud_rng.uniform(gx.min(), gx.max())
-    cy = cloud_rng.uniform(gy.min(), gy.max())
+# cloud_values_grid = np.zeros_like(GX)
+# for i in range(len(sectors)):
+#     for j in range(len(time_values)):
+#         beta_values_curr = sector_data[i,j][-1] # matrix
+#         beta_values_curr[:,-1] /= max_beta
+#         x, y = beta_values_curr[:,0], beta_values_curr[:,1]
 
-    # Cloud horizontal dimensions
-    rx = cloud_rng.uniform(2.0, 5.0)
-    ry = cloud_rng.uniform(2.0, 4.0)
+#         for k in range(beta_values_curr.shape[0]):
+#             cloud_values_grid[int(x[k]), int(y[k])] = beta_values_curr[k, -1]
 
-    # Maximum cloud strength
-    strength = cloud_rng.uniform(0.5, 1.0)
+# print(cloud_values_grid.shape)
 
-    # Gaussian cloud profile
-    cloud = strength * np.exp(
-        -0.5 * (
-            ((GX - cx) / rx)**2 +
-            ((GY - cy) / ry)**2
-        )
-    )
-
-    # Combine overlapping clouds
-    cloud_values = np.maximum(cloud_values, cloud)
-
-# Optional: remove very weak cloud edges
-cloud_values[cloud_values < 0.05] = 0.0
-#cloud_values[cloud_values > 0.02] = 0.0
-
-#print(rng.random.choice(0, 1, size=GX.shape).astype(bool))
-
-print('cloud_values shape:', cloud_values.shape)
+cloud_values_2d = cloud_values_grid[:, :, -1]
 
 show_terrain_time_trees(
     GX, GY, GZ,
     time_values,
     trees=trees,
-    background_image="background_2.jpeg",
-    cloud_values=cloud_values
+    background_image="background_2_fixed.jpg",
+    cloud_values=cloud_values_grid
 )

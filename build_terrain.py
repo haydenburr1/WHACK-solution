@@ -2,6 +2,7 @@ import bisect
 import heapq
 import math
 import numpy as np
+from scipy.ndimage import maximum_filter
 import pyvista as pv
 import time
 import pandas as pd
@@ -31,6 +32,11 @@ def smooth_noise(rng, n, scale):
     spec = np.fft.fft2(rng.normal(size=(n, n))) * np.exp(-2 * np.pi**2 * scale**2 * f2)
     field = np.fft.ifft2(spec).real
     return field / field.std()
+
+    """
+    1. white noise, to frequency domain, compute bins, build gaussian filter FFT(g) x FFT(f) = FFT(g * f)
+    2. apply filter and go back: spec = fft(noise) * filter, then ifft2(spec) returns to space
+    """
 
 
 def make_slope_table(rng, base_slope, anisotropy, n_waves=3, n_table=N_TABLE, min_slope=0.02):
@@ -364,12 +370,11 @@ def make_trees(frame):
     return trunks, canopies
 
 
-
 def show_terrain_time_trees(
     GX, GY, GZ, time_values,
     trees=None,
     background_image=None,
-    cloud_values=None
+    cloud_values=None          # shape (nx, ny, nt); a 2D (nx, ny) array is also accepted
 ):
     # --------------------------------------------------
     # TERRAIN COLOUR MAP
@@ -445,71 +450,79 @@ def show_terrain_time_trees(
     # CLOUDS
     # --------------------------------------------------
 
-    cloud_poly = None
-    cloud_actor = None
+    CLOUD_ALTITUDE = zmax + 2.0   # fixed z for every cloud
+    BETA_THRESHOLD = 0.15          # after normalization
+    MIN_RADIUS = 1.0              # radius of the weakest cloud
+    MAX_RADIUS = 3.0              # radius of the strongest cloud
+    NEIGHBOURHOOD = 7             # cells; a cell must be the max within this window
 
+    cloud_norm = None
     if cloud_values is not None:
+        cloud_norm = np.abs(
+            np.nan_to_num(cloud_values, nan=0.0, posinf=0.0, neginf=0.0)
+        )
 
-        if cloud_values.shape != GX.shape:
+        # accept a static 2D field too: repeat it for every time step
+        if cloud_norm.ndim == 2:
+            cloud_norm = np.repeat(cloud_norm[:, :, None], n_times, axis=2)
+        if cloud_norm.shape != GZ.shape:
             raise ValueError(
-                "cloud_values must have the same X-Y shape as GX and GY."
+                "cloud_values must have shape (nx, ny) or (nx, ny, nt)."
             )
 
-        CLOUD_HEIGHT = 5.0
-        CLOUD_THRESHOLD = 0.25
-        CLOUD_PROBABILITY = 0.10
-        CLOUD_POINT_SIZE = 35
+        # normalise by the global max so sizes are comparable across time
+        gmax = cloud_norm.max()
+        if gmax > 0:
+            cloud_norm = cloud_norm / gmax
 
-        values = np.nan_to_num(
-            cloud_values, nan=0.0, posinf=0.0, neginf=0.0
+    cloud_template = pv.Sphere(radius=1.0, theta_resolution=16, phi_resolution=16)
+
+    def draw_clouds(t):
+        if cloud_norm is None:
+            return
+
+        frame = cloud_norm[:, :, t]
+
+        # a cell is a cloud centre if it is the max of its neighbourhood
+        local_max = frame == maximum_filter(
+            frame, size=NEIGHBOURHOOD, mode="nearest"
         )
-        values = np.clip(values, 0.0, 1.0)
+        mask = local_max & (frame > BETA_THRESHOLD)
 
-        values_flat = values.flatten(order="F")
+        if not mask.any():
+            # no clouds at this time step: remove the previous ones
+            plotter.remove_actor("clouds", render=False)
+            return
 
-        # Find positions where cloud strength exceeds the threshold
-        eligible = np.flatnonzero(
-            values_flat > CLOUD_THRESHOLD
+        betas = frame[mask]
+
+        poly = pv.PolyData(np.column_stack([
+            GX[mask],
+            GY[mask],
+            np.full(betas.shape, CLOUD_ALTITUDE),
+        ]))
+
+        # radius grows linearly with beta
+        poly["radius"] = MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS) * (
+            (betas - BETA_THRESHOLD) / (1.0 - BETA_THRESHOLD)
         )
 
-        # Randomly sample a subset of eligible positions
-        rng = np.random.default_rng(42)
+        glyphs = poly.glyph(
+            scale="radius",
+            factor=1.0,
+            orient=False,
+            geom=cloud_template,
+        )
 
-        selected = eligible[
-            rng.random(len(eligible)) < CLOUD_PROBABILITY
-        ]
-
-        # Coordinates of the selected cloud positions
-        cloud_x = x_flat[selected]
-        cloud_y = y_flat[selected]
-        cloud_z = Z.flatten(order="F")[selected]
-
-        strength = values_flat[selected]
-
-        cloud_points = np.column_stack([
-            cloud_x,
-            cloud_y,
-            cloud_z + CLOUD_HEIGHT
-        ])
-
-        cloud_poly = pv.PolyData(cloud_points)
-        cloud_poly["cloud_size"] = strength
-
-        cloud_actor = plotter.add_points(
-            cloud_poly,
+        # same name -> replaces the clouds of the previous frame
+        plotter.add_mesh(
+            glyphs,
             name="clouds",
-            style="points_gaussian",
-            color="white",
-            opacity=0.25,
-            point_size=CLOUD_POINT_SIZE,
-            show_scalar_bar=False,
+            color="lightgray",
+            opacity=0.5,
+            smooth_shading=True,
             render=False,
         )
-
-        # Scale Gaussian sprites according to cloud strength
-        cloud_actor.mapper.scale_array = "cloud_size"
-
-        print(f"Number of clouds: {len(selected)}")
 
     # --------------------------------------------------
     # TREE TEMPLATES
@@ -556,6 +569,7 @@ def show_terrain_time_trees(
         )
 
     draw_trees(0)
+    draw_clouds(0)
 
     # --------------------------------------------------
     # TIME LABEL
@@ -587,14 +601,9 @@ def show_terrain_time_trees(
 
         grid["height"] = Z_new.flatten(order="F")
 
-        # Update trees
+        # Update trees and clouds
         draw_trees(t)
-
-        # Update cloud altitude to follow the changing terrain
-        if cloud_poly is not None:
-            cloud_poly.points[:, 2] = (
-                Z_new.flatten(order="F")[selected] + CLOUD_HEIGHT
-            )
+        draw_clouds(t)
 
         # Update upper-left date label
         date_label.SetText(2, str(time_values[t]))

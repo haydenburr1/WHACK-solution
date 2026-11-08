@@ -22,8 +22,13 @@ sized by how its mean return over the window ranks against all stocks, and
 winners get up to 8 small trees around it. Colours use the same green-mountain
 colormap (hard water edge at sea level).
 
+Clouds follow the flat version: one sphere per stock whose beta (against its
+sector's cap-weighted return, over the same window) is above a threshold. The
+sphere floats at a fixed altitude above the stock's peak and its radius grows
+with beta. All betas are computed once, the first time clouds are drawn.
+
 Controls: slider (updates while dragging), Left / Right arrow keys, T toggles
-trees, hover a peak for stock info.
+trees, C toggles clouds, hover a peak for stock info.
 
 for tobias:
 ./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/cube.py
@@ -503,6 +508,138 @@ class TreeLayer:
 
 
 # --------------------------------------------------
+# CLOUDS (same rules as the flat version)
+# --------------------------------------------------
+
+CLOUD_ALTITUDE = hmax + land_lift + 2.0   # fixed height above the face plane for every cloud
+BETA_THRESHOLD = 0.15                     # after normalisation: weaker stocks get no cloud
+MIN_RADIUS = 1.0                         # radius of the weakest cloud
+MAX_RADIUS = 4.0                          # radius of the strongest cloud
+
+N_STOCKS = sum(len(t) for t in sector_tickers)
+
+
+@functools.lru_cache(maxsize=None)
+def beta_table():
+    """(days, stocks) cloud strengths in [0, 1], one row per day FIRST_DAY..LAST_DAY.
+
+    Beta of each stock against its own sector's cap-weighted return over the
+    rolling window, as in 2DT_trees.py. Negative betas become 0 (no cloud), and
+    everything is divided by the largest beta over all days, so cloud sizes are
+    comparable across time. Columns follow the sector order of `sector_tickers`.
+    Computed lazily so the worker processes never pay for it.
+    """
+    t0 = time.time()
+    caps = pd.read_csv(Path("data") / "caps.csv", index_col=0).reset_index()
+    caps = caps.set_index("ticker")["market_cap_usd"]
+
+    all_tickers = np.concatenate(sector_tickers)
+    ret_dates = returns["date"].values
+    ret_vals = returns[list(all_tickers)].values.astype(float)
+    vol_dates = vol["date"].values
+
+    bounds = np.concatenate([[0], np.cumsum([len(t) for t in sector_tickers])])
+    weights = []
+    for tk in sector_tickers:
+        w = caps.reindex(tk).values.astype(float)
+        w = np.where(np.isfinite(w) & (w > 0), w, np.nan)
+        weights.append(np.where(np.isnan(w), np.nanmean(w), w))   # unknown cap -> sector mean
+
+    n_days = LAST_DAY - FIRST_DAY + 1
+    table = np.zeros((n_days, N_STOCKS))
+    lag = np.timedelta64(window, "D")
+    for d in range(n_days):
+        t = vol_dates[FIRST_DAY + d]
+        lo = np.searchsorted(ret_dates, t - lag, side="left")
+        hi = np.searchsorted(ret_dates, t, side="right")
+        R_all = ret_vals[lo:hi]
+        for i in range(len(sectors)):
+            R = R_all[:, bounds[i]:bounds[i + 1]]
+            R = R[np.isfinite(R).all(axis=1)]
+            if len(R) < 3:
+                continue
+            w = weights[i]
+            port = R @ w / w.sum()                  # cap-weighted sector return, one per date
+            pc = port - port.mean()
+            table[d, bounds[i]:bounds[i + 1]] = (
+                ((R - R.mean(axis=0)) * pc[:, None]).sum(axis=0) / ((pc ** 2).sum() + 1e-12)
+            )
+
+    table = np.clip(np.nan_to_num(table, nan=0.0, posinf=0.0, neginf=0.0), 0.0, None)
+    gmax = table.max()
+    if gmax > 0:
+        table /= gmax
+    print(f"Cloud strengths (betas) computed for {n_days} days in {time.time() - t0:.1f}s.")
+    return table
+
+
+def cloud_frame(day, tiles, scene):
+    """-> (points (m, 3), radii (m,)) for every stock whose beta is above the threshold."""
+    betas = beta_table()[day - FIRST_DAY]
+    pts, radii = [], []
+    start = 0
+    for sector, (_, xy, _, _), tickers in zip(sectors, tiles, sector_tickers):
+        b = betas[start:start + len(tickers)]
+        start += len(tickers)
+        keep = b > BETA_THRESHOLD
+        if not keep.any():
+            continue
+        pts.append(scene.place(sector, xy[keep, 0] - HALF, xy[keep, 1] - HALF, CLOUD_ALTITUDE))
+        radii.append(MIN_RADIUS + (MAX_RADIUS - MIN_RADIUS)
+                     * (b[keep] - BETA_THRESHOLD) / (1.0 - BETA_THRESHOLD))
+    if not pts:
+        return np.zeros((0, 3)), np.zeros(0)
+    return np.vstack(pts), np.concatenate(radii)
+
+
+class CloudLayer:
+    """Clouds as one fixed-size sphere mesh whose points move each day.
+
+    Like TreeLayer: a unit sphere is copied into MAX_CLOUDS slots and placed
+    with numpy; unused slots collapse to a point, and with no clouds at all the
+    actor is hidden. Nothing in VTK is rebuilt when the day changes.
+    """
+
+    def __init__(self, plotter, max_clouds=N_STOCKS):
+        import pyvista as pv
+
+        self.max = max_clouds
+        sphere = pv.Sphere(radius=1.0, theta_resolution=16, phi_resolution=16).triangulate()
+        sphere = sphere.compute_normals(cell_normals=False, split_vertices=False)
+        n = sphere.n_points
+        self.template = np.asarray(sphere.points)
+        faces = sphere.faces.reshape(-1, 4)
+        offs = (np.arange(max_clouds) * n)[:, None, None]
+        all_faces = np.concatenate(
+            [faces[None, :, :1].repeat(max_clouds, 0), faces[None, :, 1:] + offs], axis=2)
+        self.mesh = pv.PolyData(np.zeros((max_clouds * n, 3)), all_faces.ravel())
+        # Spheres are only scaled and moved, never rotated, so the normals never change.
+        self.mesh.point_data["Normals"] = np.tile(np.asarray(sphere.point_data["Normals"]),
+                                                  (max_clouds, 1))
+        self.mesh.point_data.active_normals_name = "Normals"
+        self.actor = plotter.add_mesh(self.mesh, color="lightgray", opacity=0.5, render=False)
+        self.actor.prop.interpolation = "phong"
+        self.has_clouds, self.enabled = False, True
+
+    def update(self, points, radii):
+        m = min(len(points), self.max)
+        self.has_clouds = m > 0
+        if m:
+            out = np.empty((self.max, len(self.template), 3))
+            out[:m] = points[:m, None, :] + radii[:m, None, None] * self.template[None]
+            out[m:] = points[0]                                  # unused slots: a single point
+            self.mesh.points = out.reshape(-1, 3)
+        self._apply()
+
+    def set_visible(self, on):
+        self.enabled = on
+        self._apply()
+
+    def _apply(self):
+        self.actor.SetVisibility(self.enabled and self.has_clouds)
+
+
+# --------------------------------------------------
 # BACKGROUND PRECOMPUTATION (days not in struct_Z.npy)
 # --------------------------------------------------
 
@@ -632,50 +769,10 @@ class CubeScene:
         self.tree, self.labels, self.day = None, None, None
         self.cmap = green_mountain_cmap()
         self.show_trees = True
+        self.show_clouds = True
         self.tiles = None
         self.trees = None          # TreeLayer, made on first draw
-        self.peaks = None          # (n, 3) hover anchors, same order as self.labels
-
-    # -- geometry (a, b are face coords centred on the face, h is height) ---
-    def place(self, sector, a, b, h):
-        x, y, z = face_to_xyz(sector, np.asarray(a, float), np.asarray(b, float),
-                              np.asarray(h, float))
-        return np.stack(np.broadcast_arrays(x, y, z), axis=-1)
-
-    def up(self, sector, a, b):
-        axis, sign = FACE_AXES[sector]
-        n = np.zeros(3)
-        n[axis] = sign
-        return np.broadcast_to(n, np.shape(a) + (3,)).copy()
-
-    # -- hooks ----------------------------------------------------------------
-    
-
-
-    
-  
-
-# How close (in scene units) the mouse must be to a peak to show its stock.
-HOVER_RADIUS = 1.2
-
-
-class CubeScene:
-    """Six face meshes that are created once and updated in place each day.
-
-    Subclasses change the shape by overriding `place` / `up`.
-    """
-    hover_radius = HOVER_RADIUS
-    tree_scale = 1.0               # tree size multiplier
-    tooltip_font = 11
-
-    def __init__(self, plotter):
-        self.plotter = plotter
-        self.meshes, self.actors = [], []
-        self.tree, self.labels, self.day = None, None, None
-        self.cmap = green_mountain_cmap()
-        self.show_trees = True
-        self.tiles = None
-        self.trees = None          # TreeLayer, made on first draw
+        self.clouds = None         # CloudLayer, made on first draw
         self.peaks = None          # (n, 3) hover anchors, same order as self.labels
 
     # -- geometry (a, b are face coords centred on the face, h is height) ---
@@ -753,6 +850,7 @@ class CubeScene:
         self.tree, self.labels, self.day = cKDTree(self.peaks), all_labels, day
         self.tiles = tiles
         self.draw_trees()
+        self.draw_clouds()
 
     def draw_trees(self):
         if self.trees is None:
@@ -760,6 +858,13 @@ class CubeScene:
         self.trees.set_visible(self.show_trees)
         if self.show_trees:
             self.trees.update(*tree_frame(self.tiles, self))
+
+    def draw_clouds(self):
+        if self.clouds is None:
+            self.clouds = CloudLayer(self.plotter)     # created once, then moved in place
+        self.clouds.set_visible(self.show_clouds)
+        if self.show_clouds:
+            self.clouds.update(*cloud_frame(self.day, self.tiles, self))
 
 
 def run(scene_cls=CubeScene):
@@ -881,6 +986,13 @@ def run(scene_cls=CubeScene):
         plotter.render()
 
     plotter.add_key_event("t", toggle_trees)
+
+    def toggle_clouds():
+        scene.show_clouds = not scene.show_clouds
+        scene.draw_clouds()
+        plotter.render()
+
+    plotter.add_key_event("c", toggle_clouds)
 
     scene.decorate()
     refresh()
