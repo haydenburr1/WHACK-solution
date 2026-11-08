@@ -381,9 +381,11 @@ def make_trees(frame):
     return trunks, canopies
 
 
-def show_terrain_time_trees(GX, GY, GZ, time_values, trees=None):
+def show_terrain_time_trees(GX, GY, GZ, time_values, trees=None, background_image=None):
     import pyvista as pv
     from matplotlib.colors import LinearSegmentedColormap
+
+    print('background', background_image)
 
     # COLOR MAP
 
@@ -437,6 +439,15 @@ def show_terrain_time_trees(GX, GY, GZ, time_values, trees=None):
     #     grid, scalars="height", cmap=land_cmap,
     #     clim=(0, zmax), smooth_shading=True, show_edges=False,
     # )
+
+    if background_image is not None:
+        background_texture = pv.read_texture(background_image)
+
+        # Surrounds the scene; rotates naturally with the camera view
+        plotter.add_actor(background_texture.to_skybox())
+
+        # Optional: use the image for scene lighting and reflections
+        plotter.set_environment_texture(background_texture, is_srgb=True)
 
     plotter.add_mesh(
         grid, scalars="height", cmap=terrain_cmap,
