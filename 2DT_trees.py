@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from scipy.stats import rankdata
+import pyvista as pv
 
 """
 ./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2DT_trees.py
@@ -129,4 +130,9 @@ for j in range(len(time_values)):
             frame.extend((x, y, zz, side_size) for x, y, zz in zip(sx[ok], sy[ok], z[ok]))
     trees.append(np.array(frame).reshape(-1, 4))
 
-show_terrain_time_trees(GX, GY, GZ, time_values, trees=trees)
+show_terrain_time_trees(
+    GX, GY, GZ,
+    time_values,
+    trees=trees,
+    background_image="background_2.jpeg",
+)
