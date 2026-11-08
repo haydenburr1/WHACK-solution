@@ -1,14 +1,10 @@
 """Download and cache daily prices for the Market Worlds stock universe.
 
-Run:  python fetch_data.py
-Outputs (in ./data):
+Run (from anywhere):  python pipeline/fetch_data.py
+Outputs (in the repo's data/ folder):
   universe.csv    - ticker, name, sector, sub_industry, avg_dollar_volume  (commit this)
   prices.parquet  - adjusted close, one row per trading day, one column per ticker (gitignore this)
 Delete prices.parquet to force a re-download; delete universe.csv as well to rebuild the stock list.
-
-run Tobias:
-./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/fetch_data.py
-
 """
 import io
 import time
@@ -18,7 +14,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"   # repo-root data/
 UNIVERSE_CSV = DATA_DIR / "universe.csv"
 PRICES_FILE = DATA_DIR / "prices.parquet"
 
