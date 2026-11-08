@@ -27,6 +27,8 @@ vol = pd.read_csv(Path("data") / "volatility.csv", index_col=0).reset_index()
 univ = pd.read_csv(Path("data") / "universe.csv", index_col=0).reset_index()
 returns = pd.read_parquet(Path("data") / "prices.parquet").pct_change().reset_index()
 
+
+
 vol["date"] = pd.to_datetime(vol["date"])
 returns["date"] = pd.to_datetime(returns["date"])
 
@@ -135,4 +137,5 @@ show_terrain_time_trees(
     time_values,
     trees=trees,
     background_image="background_2.jpeg",
+    cloud_values=
 )

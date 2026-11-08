@@ -364,118 +364,279 @@ def make_trees(frame):
     return trunks, canopies
 
 
-def show_terrain_time_trees(GX, GY, GZ, time_values, trees=None, background_image=None):
 
-    print('background', background_image)
+def show_terrain_time_trees(
+    GX, GY, GZ, time_values,
+    trees=None,
+    background_image=None,
+    cloud_values=None
+):
 
-    # COLOR MAP
-
-    # zmax = float(np.max(GZ))
-    # sea = 0.5                      # sea level (land starts above this)
-    # n = 256
-    # n_water = int(np.clip(sea / zmax, 0, 1) * n)
-    # n_land = n - n_water
-    # water = np.tile([0.1, 0.35, 0.7, 1.0], (n_water, 1))
-    # # land: light green at low elevation -> dark green at high elevation
-    # light = np.array([0.55, 0.80, 0.40, 1.0])
-    # dark  = np.array([0.10, 0.45, 0.15, 1.0])
-    # land = np.linspace(light, dark, n_land)
-    # land_cmap = ListedColormap(np.vstack([water, land]))
+    # --------------------------------------------------
+    # TERRAIN COLOUR MAP
+    # --------------------------------------------------
 
     zmax = float(np.max(GZ))
-    sea = 0.5                       # sea level
-    s = sea / zmax                  # sea level as a fraction of the full range
+    sea = 0.5
+    s = sea / zmax
 
     def land(f):
-        """Map f in [0, 1] (0 = shoreline, 1 = highest peak) to a colormap position."""
         return s + f * (1 - s)
 
     stops = [
-        (0.0,       "#1a5ab3"),     # deep water
-        (s,         "#1a5ab3"),     # water up to sea level (hard edge)
-        (land(0.00), "#8ccc66"),    # lowland: light green
-        (land(0.30), "#2f8a3a"),    # hills: darker green
-        (land(0.50), "#d9a441"),    # foothills: yellow-orange
-        (land(0.65), "#c8662b"),    # mountains: orange
-        (land(0.80), "#7d7d7d"),    # rock: gray
-        (1.0,       "#e6e6e6"),     # peaks: light gray
+        (0.0, "#1a5ab3"),
+        (s, "#1a5ab3"),
+        (land(0.00), "#8ccc66"),
+        (land(0.30), "#2f8a3a"),
+        (land(0.50), "#d9a441"),
+        (land(0.65), "#c8662b"),
+        (land(0.80), "#7d7d7d"),
+        (1.0, "#e6e6e6"),
     ]
-    terrain_cmap = LinearSegmentedColormap.from_list("green_mountain", stops, N=512)
+
+    terrain_cmap = LinearSegmentedColormap.from_list(
+        "green_mountain", stops, N=512
+    )
 
     n_times = GZ.shape[2]
+
     assert len(time_values) == n_times
+
     if trees is not None:
         assert len(trees) == n_times
 
+    # --------------------------------------------------
+    # INITIAL TERRAIN
+    # --------------------------------------------------
+
     Z = GZ[:, :, 0]
+
     grid = pv.StructuredGrid(GX, GY, Z)
     grid["height"] = Z.flatten(order="F")
 
     plotter = pv.Plotter()
-    # plotter.add_mesh(
-    #     grid, scalars="height", cmap="terrain",
-    #     clim=(0, np.max(GZ)), smooth_shading=True, show_edges=False,
-    # )
-    # plotter.add_mesh(
-    #     grid, scalars="height", cmap=land_cmap,
-    #     clim=(0, zmax), smooth_shading=True, show_edges=False,
-    # )
 
     if background_image is not None:
         background_texture = pv.read_texture(background_image)
-
-        # Surrounds the scene; rotates naturally with the camera view
         plotter.add_actor(background_texture.to_skybox())
-
-        # Optional: use the image for scene lighting and reflections
-        plotter.set_environment_texture(background_texture, is_srgb=True)
+        plotter.set_environment_texture(
+            background_texture, is_srgb=True
+        )
 
     plotter.add_mesh(
-        grid, scalars="height", cmap=terrain_cmap,
-        clim=(0, zmax), smooth_shading=True, show_edges=False,
+        grid,
+        scalars="height",
+        cmap=terrain_cmap,
+        clim=(0, zmax),
+        smooth_shading=True,
+        show_edges=False,
     )
-    
-    plotter.add_axes()
-    plotter.show_bounds(grid="back")
 
-    # ---- tree templates: height 1, base at the origin ----
+    # --------------------------------------------------
+    # CLOUDS
+    # --------------------------------------------------
+
+    cloud_poly = None
+
+    if cloud_values is not None:
+
+        assert cloud_values.shape == GX.shape, (
+            "cloud_values must have the same X-Y shape as GX and GY"
+        )
+
+        # Fixed altitude above terrain
+        CLOUD_HEIGHT = 2.0
+
+        # Minimum cloud value for visibility
+        CLOUD_THRESHOLD = 0.02
+
+        # Maximum cloud radius in world coordinates
+        CLOUD_RADIUS = 1.5
+
+        # Number of Gaussian sprites used to construct each cloud
+        CLOUD_SPRITES = 12
+
+        cloud_values = np.nan_to_num(
+            cloud_values, nan=0.0
+        )
+
+        cloud_values = np.clip(cloud_values, 0.0, 1.0)
+
+        # Only locations with clouds
+        cloud_sizes = cloud_values.flatten(order="F")
+        keep = cloud_sizes > CLOUD_THRESHOLD
+
+        x = GX.flatten(order="F")[keep]
+        y = GY.flatten(order="F")[keep]
+        z = Z.flatten(order="F")[keep]
+
+        sizes = cloud_sizes[keep]
+
+        # Create overlapping Gaussian sprites for each cloud
+        rng = np.random.default_rng(42)
+
+        cloud_points = []
+        sprite_sizes = []
+
+        for cx, cy, cz, strength in zip(x, y, z, sizes):
+
+            # Cloud centre is always at the same height
+            centre_z = cz + CLOUD_HEIGHT
+
+            # Cloud volume increases with cloud_values
+            radius = CLOUD_RADIUS * strength
+
+            for i in range(CLOUD_SPRITES):
+
+                # Random position inside the cloud volume
+                angle = rng.uniform(0, 2 * np.pi)
+                distance = radius * np.sqrt(rng.uniform(0, 1))
+
+                dx = distance * np.cos(angle)
+                dy = distance * np.sin(angle)
+
+                # Vertical spread gives a fluffy appearance
+                dz = rng.normal(0, radius * 0.25)
+
+                cloud_points.append([
+                    cx + dx,
+                    cy + dy,
+                    centre_z + dz
+                ])
+
+                # Vary sprite size within each cloud
+                sprite_sizes.append(
+                    strength * rng.uniform(0.7, 1.3)
+                )
+
+        cloud_poly = pv.PolyData(
+            np.asarray(cloud_points)
+        )
+
+        cloud_poly["cloud_size"] = np.asarray(sprite_sizes)
+
+        cloud_actor = plotter.add_points(
+            cloud_poly,
+            name="clouds",
+            style="points_gaussian",
+            color="white",
+            opacity=0.16,
+            point_size=35,
+            show_scalar_bar=False,
+            render=False,
+        )
+
+        cloud_actor.mapper.scale_array = "cloud_size"
+
+    # --------------------------------------------------
+    # TREE TEMPLATES
+    # --------------------------------------------------
+
     global trunk_geom, canopy_geom
+
     trunk_geom = pv.Cylinder(
-        center=(0, 0, 0.15), direction=(0, 0, 1),
-        radius=0.04, height=0.3, resolution=8,
+        center=(0, 0, 0.15),
+        direction=(0, 0, 1),
+        radius=0.04,
+        height=0.3,
+        resolution=8,
     )
+
     canopy_geom = pv.Cone(
-        center=(0, 0, 0.65), direction=(0, 0, 1),
-        height=0.7, radius=0.22, resolution=10,
+        center=(0, 0, 0.65),
+        direction=(0, 0, 1),
+        height=0.7,
+        radius=0.22,
+        resolution=10,
     )
 
     def draw_trees(t):
+
         if trees is None:
             return
+
         trunks, canopies = make_trees(trees[t])
-        # same `name` replaces the previous actor instead of stacking a new one
-        plotter.add_mesh(trunks, color="saddlebrown", name="trunks", render=False)
-        plotter.add_mesh(canopies, color="forestgreen", name="canopies",
-                         smooth_shading=True, render=False)
+
+        plotter.add_mesh(
+            trunks,
+            color="saddlebrown",
+            name="trunks",
+            render=False
+        )
+
+        plotter.add_mesh(
+            canopies,
+            color="forestgreen",
+            name="canopies",
+            smooth_shading=True,
+            render=False
+        )
 
     draw_trees(0)
 
-    date_label = plotter.add_text(str(time_values[0]), position="upper_left", font_size=12)
+    # --------------------------------------------------
+    # TIME LABEL AND SLIDER
+    # --------------------------------------------------
+
+    date_label = plotter.add_text(
+        str(time_values[0]),
+        position="upper_left",
+        font_size=12
+    )
 
     x_flat = GX.flatten(order="F")
     y_flat = GY.flatten(order="F")
 
     def update_terrain(value):
+
         t = int(round(value))
+
         Z_new = GZ[:, :, t]
-        grid.points = np.column_stack([x_flat, y_flat, Z_new.flatten(order="F")])
+
+        grid.points = np.column_stack([
+            x_flat,
+            y_flat,
+            Z_new.flatten(order="F")
+        ])
+
         grid["height"] = Z_new.flatten(order="F")
+
         draw_trees(t)
+
+        # Update cloud altitude with terrain, keeping
+        # the same fixed vertical offset.
+        if cloud_poly is not None:
+
+            cloud_points = cloud_poly.points.copy()
+
+            # Cloud positions were generated relative to
+            # the initial terrain. For animated terrain,
+            # update their vertical positions here.
+            #
+            # This preserves their horizontal distribution.
+            cloud_points[:, 2] = (
+                cloud_points[:, 2]
+                + (
+                    GZ[:, :, t].flatten(order="F")[keep]
+                    - GZ[:, :, 0].flatten(order="F")[keep]
+                ).repeat(CLOUD_SPRITES)
+            )
+
+            cloud_poly.points = cloud_points
+
         date_label.SetInput(str(time_values[t]))
+
         plotter.render()
 
     plotter.add_slider_widget(
-        update_terrain, rng=(0, n_times - 1), value=0,
-        title="Time", interaction_event="always",
+        update_terrain,
+        rng=(0, n_times - 1),
+        value=0,
+        title="Time",
+        interaction_event="always",
     )
+
+    plotter.add_axes()
+    plotter.show_bounds(grid="back")
+
     plotter.show()
