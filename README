@@ -2,22 +2,24 @@
 
 ## About
 
-This project is about a creative approach to financial modeling. Instead of visualizing data with graphs, we thought to do it with planets where each property represents a different data. The terrain represents the volatility, the trees represent the stocks and the clouds represent the beta. The world is seperated into six sectors, all of which correspond to a different financial sector and has the related companies located inside. The entire planets structure changes as the date of which the data takes place is modified by the slider, the data has been collected through wikipedia and pyfinance.
+This project is about a creative approach to financial modeling. Instead of visualizing data with graphs, we thought to do it with planets where each property represents a different data. The terrain represents the volatility, each tree cluster marks a stock and grows with its recent returns, and the clouds represent the beta. The world is separated into six sectors, all of which correspond to a different financial sector and has the related companies located inside. The entire planets structure changes as the date of which the data takes place is modified by the slider, the data has been collected through wikipedia and yfinance.
 
 ## Controls
 
-'T' to toggle the trees, arrow keys to move the slider by one in the corresponding direction.
+In the cubic version: 'T' to toggle the trees, 'C' to toggle the clouds, arrow keys to move the slider by one in the corresponding direction, and hover over a stock to see its details.
 
 ## Running
 
-In order to run the system, the user needs to download the data by running the ```pipeline/fetch_data.py```, ```pipeline/get_market_caps.py``` and ```pipeline/volatility.py``` files. Make sure to run the volatility file last.
+Run every command from the repository root, after installing the dependencies with ```pip install -r requirements.txt```.
 
-Then run ```2DT.py``` in order to generate an island for each market sector.
+The data is already included in the ```data``` folder. To download it again, delete ```data/prices.parquet``` and run the ```pipeline/fetch_data.py```, ```pipeline/get_market_caps.py``` and ```pipeline/volatility.py``` files. Make sure to run the volatility file last.
 
 ### Running the flat planet algorithm
 
-Run the ```2DT_trees.py``` file.
+Run ```2DT.py``` in order to generate an island for each market sector (this takes about 8 minutes), then run the ```2DT_trees.py``` file.
 
 ### Running the cubic planet algorithm
 
-Run the ```cube.py``` file, or the ```cube_non_cloud.py``` for a non-cloud version.
+Run the ```cube.py``` file, or the ```cube_no_dots.py``` for a version without the stock dots.
+
+Days are generated on demand as the slider moves. For instant sliding, run ```build_cache.py``` once beforehand. It writes about 1.1 GB to ```cube_cache``` and can be stopped and resumed.

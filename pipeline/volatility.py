@@ -14,6 +14,8 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"   # repo-root data/
 
 PRICES_FILE = DATA_DIR / "prices.parquet"
 OUTPUT_FILE = DATA_DIR / "volatility.parquet"
+CSV_FILE = DATA_DIR / "volatility.csv"
+NORMALIZED_FILE = DATA_DIR / "normalized_volatility.parquet"
 
 # Settings
 WINDOW = 30

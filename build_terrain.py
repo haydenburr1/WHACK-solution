@@ -324,7 +324,7 @@ def show_terrain_time(GX, GY, GZ, time_values):
         grid["height"] = Z_new.flatten(order="F")
 
         # Update date label
-        date_label.SetInput(str(time_values[t]))
+        date_label.SetText(2, str(time_values[t]))
 
         plotter.render()
 

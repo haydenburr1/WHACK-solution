@@ -83,7 +83,7 @@ for j, t in enumerate(time_values):
 
         mean_returns_nonweighted = np.mean(subset_returns, axis=0)
         
-        marketcaps_relevant = marketcaps[marketcaps["wiki_symbol"].isin(tickers)]
+        marketcaps_relevant = marketcaps[marketcaps["ticker"].isin(tickers)]
         caps = marketcaps_relevant.set_index("ticker")["market_cap_usd"].reindex(tickers).values
         caps_b = caps[None, :]          # shape (1, n_tickers) for broadcasting
 

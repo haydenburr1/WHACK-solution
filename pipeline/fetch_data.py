@@ -3,7 +3,7 @@
 Run (from anywhere):  python pipeline/fetch_data.py
 Outputs (in the repo's data/ folder):
   universe.csv    - ticker, name, sector, sub_industry, avg_dollar_volume  (commit this)
-  prices.parquet  - adjusted close, one row per trading day, one column per ticker (gitignore this)
+  prices.parquet  - adjusted close, one row per trading day, one column per ticker  (commit this)
 Delete prices.parquet to force a re-download; delete universe.csv as well to rebuild the stock list.
 """
 import io
