@@ -22,8 +22,8 @@ from scipy.ndimage import zoom, map_coordinates
 from scipy.spatial import cKDTree
 
 import cube as C                                   # a csapat cube.py-ja: adat + geometria
-from themes import THEME_CLASSES                   # planet/themes.py
-from geometry import smoothstep, merge_props       # planet/geometry.py
+from planet.themes import THEME_CLASSES                   # planet/themes.py
+from planet.geometry import smoothstep, merge_props       # planet/geometry.py
 
 # ------------------------------------------------------------------ beállítások
 THEME_MIX = 0.5       # 0 = tiszta cube.py-s terep, 1 = a téma alakja erősen formálja a magasságot
