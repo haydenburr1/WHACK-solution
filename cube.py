@@ -879,7 +879,7 @@ def run(scene_cls=CubeScene):
 
     # BACKGROUND
     if USE_BACKGROUND:
-        background_texture = pv.read_texture("background_2.jpeg")
+        background_texture = pv.read_texture("assets/background_2_fixed.jpg")
         plotter.add_actor(background_texture.to_skybox())
         plotter.set_environment_texture(
         background_texture, is_srgb=True

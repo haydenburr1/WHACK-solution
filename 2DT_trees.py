@@ -249,6 +249,6 @@ show_terrain_time_trees(
     GX, GY, GZ,
     time_values,
     trees=trees,
-    background_image="background_2_fixed.jpg",
+    background_image="assets/background_2_fixed.jpg",
     cloud_values=cloud_values_grid
 )
