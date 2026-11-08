@@ -1,11 +1,5 @@
 import numpy as np
-
 from build_terrain import build_terrain, show_terrain_time
-
-"""
-./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2DT.py
-"""
-
 
 import time
 import pandas as pd

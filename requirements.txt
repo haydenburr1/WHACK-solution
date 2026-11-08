@@ -1,0 +1,10 @@
+numpy>=2.5.0
+pandas>=3.1.1
+pyvista>=0.49.2
+scipy>=1.18.0
+matplotlib>=3.11.2
+pyarrow>=25.0.1
+yfinance>=1.8.0
+requests>=2.34.2
+lxml>=6.1.3
+vtk>=9.6.2

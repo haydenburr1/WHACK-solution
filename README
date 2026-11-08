@@ -1,1 +1,16 @@
 Necessary Modules: 
+
+## Running
+
+In order to run the system, the user needs to download the data by running the ```pipeline/fetch_data.py```, ```pipeline/get_market_caps.py``` and ```pipeline/volatility.py``` files. Make sure to run the volatility file last.
+
+Then run ```2DT.py``` in order to generate an island for each market sector.
+
+### Running the flat planet algorithm
+
+Run the ```2DT_trees.py``` file.
+
+### Running the cubic planet algorithm
+
+Run the ```cube.py``` file, or the ```cube_non_cloud.py``` for a non-cloud version.
+
