@@ -6,3 +6,7 @@ data/normalized_volatility.*
 data/mds_*
 struct*
 cube_cache/
+__pycache__/
+*.pyc
+*.nbi
+*.nbc

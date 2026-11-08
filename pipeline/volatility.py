@@ -1,11 +1,16 @@
+"""Rolling 30-day annualized volatility from data/prices.parquet (written by fetch_data.py).
 
+Run (from anywhere):  python pipeline/volatility.py
+Outputs (in the repo's data/ folder):
+  volatility.csv / volatility.parquet  - annualized volatility, one column per ticker
+  normalized_volatility.parquet        - same, scaled to [0, 1] on a shared 1st-99th percentile scale
+"""
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-# Project data directory
-DATA_DIR = Path(__file__).resolve().parent / "data"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"   # repo-root data/
 
 PRICES_FILE = DATA_DIR / "prices.parquet"
 OUTPUT_FILE = DATA_DIR / "volatility.parquet"
@@ -34,8 +39,6 @@ def main():
 
     # Annualize volatility
     annualized_volatility = volatility * np.sqrt(TRADING_DAYS)
-    print(volatility)
-    annualized_volatility.to_csv("data/volatility.csv")
 
     # Normalize across all stocks using a shared scale
     # Use the 1st and 99th percentiles to reduce outlier effects
@@ -51,14 +54,12 @@ def main():
 
     # Save results
     annualized_volatility.to_parquet(OUTPUT_FILE)
-
-    normalized.to_parquet(
-        DATA_DIR / "normalized_volatility.parquet"
-    )
+    annualized_volatility.to_csv(CSV_FILE)   # the visualisation scripts read the CSV
+    normalized.to_parquet(NORMALIZED_FILE)
 
     print("\nVolatility calculation complete!")
-    print(f"Saved: {OUTPUT_FILE}")
-    print(f"Saved: {DATA_DIR / 'normalized_volatility.parquet'}")
+    for f in (OUTPUT_FILE, CSV_FILE, NORMALIZED_FILE):
+        print(f"Saved: {f}")
 
     print("\nSample normalized volatility:")
     print(normalized.tail())
