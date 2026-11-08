@@ -38,6 +38,7 @@ for tobias:
 import functools
 import os
 import time
+import sys
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
@@ -65,6 +66,10 @@ returns["date"] = pd.to_datetime(returns["date"])
 
 sectors = sorted(univ["sector"].unique())   # same order as 2DT.py -> same seeds
 sector_tickers = [univ.loc[univ["sector"] == s, "ticker"].values for s in sectors]
+
+N_STOCKS = len(returns.columns) - 1
+
+#N_STOCKS = 
 
 # --------------------------------------------------
 # TERRAIN PARAMETERS (identical to 2DT.py)
@@ -179,6 +184,31 @@ def sector_terrain(i, t):
     Z[Z > 0] += land_lift
     return Z, xy, heights, mean_returns
 
+# STOCK DOTS
+
+class DotLayer:
+    """Red dots on every stock position: one point-cloud mesh whose points move each day."""
+
+    def __init__(self, plotter, n_points=N_STOCKS):
+        import pyvista as pv
+
+        self.mesh = pv.PolyData(np.zeros((n_points, 3)))
+        self.actor = plotter.add_mesh(
+            self.mesh,
+            color="red",
+            point_size=10,
+            render_points_as_spheres=True,   # round dots instead of squares
+            lighting=False,                  # keep them bright red regardless of shading
+            render=False,
+        )
+        self.enabled = True
+
+    def update(self, points):
+        self.mesh.points = np.asarray(points, dtype=float)
+
+    def set_visible(self, on):
+        self.enabled = on
+        self.actor.SetVisibility(on)
 
 # --------------------------------------------------
 # PRECOMPUTED TERRAIN (struct_Z.npy from 2DT.py)
@@ -779,6 +809,16 @@ class CubeScene:
         self.clouds = None         # CloudLayer, made on first draw
         self.peaks = None          # (n, 3) hover anchors, same order as self.labels
 
+        self.dots = None           # DotLayer, made on first draw
+        self.show_dots = True
+
+    def draw_dots(self):
+        if self.dots is None:
+            self.dots = DotLayer(self.plotter)
+        self.dots.set_visible(self.show_dots)
+        if self.show_dots:
+            self.dots.update(self.dot_points)
+
     # -- geometry (a, b are face coords centred on the face, h is height) ---
     def place(self, sector, a, b, h):
         x, y, z = face_to_xyz(sector, np.asarray(a, float), np.asarray(b, float),
@@ -847,14 +887,39 @@ class CubeScene:
                 self.actors.append(self.plotter.add_mesh(
                     mesh, scalars="height", cmap=self.cmap, clim=CLIM, show_edges=False,
                     show_scalar_bar=(i == 0), render=False))
-            all_points.append(self.place(sector, xy[:, 0] - HALF, xy[:, 1] - HALF,
-                                         heights + land_lift + 0.05))   # on top of each peak
+            # all_points.append(self.place(sector, xy[:, 0] - HALF, xy[:, 1] - HALF,
+            #                              heights + land_lift + 0.05))   # on top of each peak
+
+            all_points.append(self.place(
+                    sector, xy[:, 0] - HALF, xy[:, 1] - HALF,
+                    surface_z(Z, xy[:, 0], xy[:, 1]) + 0.05))      # sit on the real terrain
+                            
             all_labels.extend(sector_tickers[i])
-        self.peaks = np.vstack(all_points)
+
+            self.peaks = np.vstack(all_points)
         self.tree, self.labels, self.day = cKDTree(self.peaks), all_labels, day
         self.tiles = tiles
+
+        # --- dots: only stocks whose peak is actually on land ---
+        dot_pts = []
+        for sector, (Z, xy, heights, _) in zip(sectors, tiles):
+            z = surface_z(Z, xy[:, 0], xy[:, 1])
+            on_land = z > TREE_LAND
+            dot_pts.append(self.place(sector, xy[on_land, 0] - HALF,
+                                      xy[on_land, 1] - HALF, z[on_land] + 0.05))
+        self.dot_points = np.vstack(dot_pts)
+
         self.draw_trees()
         self.draw_clouds()
+        self.draw_dots()
+
+        # self.peaks = np.vstack(all_points)
+        # self.tree, self.labels, self.day = cKDTree(self.peaks), all_labels, day
+        # self.tiles = tiles
+        # self.draw_trees()
+        # self.draw_clouds()
+        
+        self.draw_dots()
 
     def draw_trees(self):
         if self.trees is None:

@@ -374,7 +374,8 @@ def show_terrain_time_trees(
     GX, GY, GZ, time_values,
     trees=None,
     background_image=None,
-    cloud_values=None          # shape (nx, ny, nt); a 2D (nx, ny) array is also accepted
+    cloud_values=None,          # shape (nx, ny, nt); a 2D (nx, ny) array is also accepted
+    dots=None                  # list of length nt; each entry is an (m, 2) array of stock x, y in GX/GY coordinates
 ):
     # --------------------------------------------------
     # TERRAIN COLOUR MAP
@@ -383,6 +384,7 @@ def show_terrain_time_trees(
     zmax = float(np.nanmax(GZ))
     if zmax <= 0:
         raise ValueError("GZ must contain positive terrain heights.")
+
 
     sea = 0.5
     s = min(sea / zmax, 1.0)
@@ -525,6 +527,51 @@ def show_terrain_time_trees(
         )
 
     # --------------------------------------------------
+    # STOCK DOTS
+    # --------------------------------------------------
+
+    x_axis = GX[:, 0]          # assumes GX varies along axis 0 (meshgrid indexing="ij")
+    y_axis = GY[0, :]
+    DOT_LIFT = 0.05
+    DOT_MIN_Z = sea            # only show stocks standing on land (above sea level)
+
+    def nearest_index(axis, v):
+        i = np.clip(np.searchsorted(axis, v), 1, len(axis) - 1)
+        left_closer = np.abs(v - axis[i - 1]) < np.abs(v - axis[i])
+        return np.where(left_closer, i - 1, i)
+
+    def draw_dots(t):
+        if dots is None:
+            return
+
+        xy = np.asarray(dots[t], dtype=float).reshape(-1, 2)
+        if len(xy) == 0:
+            plotter.remove_actor("dots", render=False)
+            return
+
+        ix = nearest_index(x_axis, xy[:, 0])
+        iy = nearest_index(y_axis, xy[:, 1])
+        z = GZ[ix, iy, t]                      # real terrain height under each stock
+
+        on_land = z > DOT_MIN_Z
+        if not on_land.any():
+            plotter.remove_actor("dots", render=False)
+            return
+
+        pts = np.column_stack([xy[on_land, 0], xy[on_land, 1], z[on_land] + DOT_LIFT])
+
+        # same name -> replaces the dots of the previous frame
+        plotter.add_mesh(
+            pv.PolyData(pts),
+            name="dots",
+            color="red",
+            point_size=10,
+            render_points_as_spheres=True,
+            lighting=False,
+            render=False,
+        )
+
+    # --------------------------------------------------
     # TREE TEMPLATES
     # --------------------------------------------------
 
@@ -570,6 +617,7 @@ def show_terrain_time_trees(
 
     draw_trees(0)
     draw_clouds(0)
+    draw_dots(0)
 
     # --------------------------------------------------
     # TIME LABEL
@@ -604,6 +652,7 @@ def show_terrain_time_trees(
         # Update trees and clouds
         draw_trees(t)
         draw_clouds(t)
+        draw_dots(t)
 
         # Update upper-left date label
         date_label.SetText(2, str(time_values[t]))
