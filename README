@@ -1,5 +1,9 @@
 
 
+## About
+
+This project is about a creative approach to financial modeling. Instead of visualizing data with graphs, we thought to do it with planets where each property represents a different data. The terrain represents the volatility, the trees represent the stocks and the clouds represent the beta. The world is seperated into six sectors, all of which correspond to a different financial sector and has the related companies located inside. The entire planets structure changes as the date of which the data takes place is modified by the slider, the data has been collected through wikipedia and pyfinance.
+
 ## Running
 
 In order to run the system, the user needs to download the data by running the ```pipeline/fetch_data.py```, ```pipeline/get_market_caps.py``` and ```pipeline/volatility.py``` files. Make sure to run the volatility file last.
