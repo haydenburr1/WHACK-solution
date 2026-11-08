@@ -56,6 +56,16 @@ max_len_time_values = 100
 time_values = vol["date"].iloc[window:window + max_len_time_values].values
 assert GZ.shape[2] == len(time_values), "saved terrain has a different number of time steps"
 
+def beta_at_peak(points, px, py):
+    d2 = (points[:, 0] - px)**2 + (points[:, 1] - py)**2
+    k = np.argmin(d2)
+    return points[k, 2]          # beta of nearest stock
+
+def beta_around_peak(points, px, py, radius=cell_size * 0.1):
+    d2 = (points[:, 0] - px)**2 + (points[:, 1] - py)**2
+    near = d2 <= radius**2
+    return points[near, 2].mean() if near.any() else np.nan
+
 # ---------------- per-stock positions and returns ----------------
 sector_data = np.empty((len(sectors), len(time_values)), dtype=object)
 
@@ -94,7 +104,7 @@ for j, t in enumerate(time_values):
             betas[j] = cov / port_var # one beta val per stock in this sector/timestamp
 
         corr = np.corrcoef(subset_returns, rowvar=False)
-        res_mds, _ = mds_rows(corr)                      # (n, 2) in [-1, 1]
+        res_mds, _ = mds_rows(corr) # (n, 2) in [-1, 1]
 
         cx, cy = corners[i]
         usable = cell_size - 2 * margin

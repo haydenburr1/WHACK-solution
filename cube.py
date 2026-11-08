@@ -24,6 +24,10 @@ colormap (hard water edge at sea level).
 
 Controls: slider (updates while dragging), Left / Right arrow keys, T toggles
 trees, hover a peak for stock info.
+
+for tobias:
+./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/cube.py
+
 """
 
 import functools
@@ -34,6 +38,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+USE_BACKGROUND = True
 
 # pyvista / vtk / scipy.spatial are imported inside the drawing code, not here:
 # on Windows every worker process re-runs this file's top level, and the
@@ -761,6 +767,15 @@ def run(scene_cls=CubeScene):
     import vtk
 
     plotter = pv.Plotter()
+
+    # BACKGROUND
+    if USE_BACKGROUND:
+        background_texture = pv.read_texture("background_2.jpeg")
+        plotter.add_actor(background_texture.to_skybox())
+        plotter.set_environment_texture(
+        background_texture, is_srgb=True
+        )
+
     scene = scene_cls(plotter)
     saved = Sources(CachedTerrain(), SavedTerrain())
     pre = Precomputer(FIRST_DAY, LAST_DAY, saved)
