@@ -1,18 +1,12 @@
-import bisect
 import heapq
 import math
+
 import numpy as np
-import pyvista as pv
-import time
-import pandas as pd
-from pathlib import Path
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+from numba import njit
 
-vol = pd.read_csv(Path("data") / "volatility.csv", index_col=0).reset_index()
-univ = pd.read_csv(Path("data") / "universe.csv", index_col=0).reset_index()
-returns = pd.read_parquet(Path("data") / "prices.parquet").pct_change().reset_index()
-
-sectors = list(set(univ["sector"]))
+# pyvista / matplotlib are imported inside the show_* functions, and the data is
+# no longer loaded here: worker processes that only grow terrain import this
+# module, and nothing used the module-level vol / univ / returns.
 
 TAU = 2 * math.pi
 N_TABLE = 200
@@ -43,6 +37,98 @@ def make_slope_table(rng, base_slope, anisotropy, n_waves=3, n_table=N_TABLE, mi
     x = sum(amps[k] * np.cos(freqs[k] * vals + phases[k]) for k in range(n_waves))
     x = x / np.max(np.abs(x)) * SLOPE_SCALE_FACTOR
     return np.maximum(base_slope + anisotropy * x, min_slope)
+
+
+@njit(cache=True)
+def _nearest_lower(xs, ys, peaks, heights, order):
+    """Row k: for every cell, distance to / height of the closest of the k lowest peaks."""
+    P, n = order.shape[0], xs.shape[0]
+    near_d = np.zeros((P + 1, n))
+    near_z = np.zeros((P + 1, n))
+    best_d = np.full(n, np.inf)
+    best_z = np.zeros(n)
+    for k in range(1, P + 1):
+        q = order[k - 1]
+        px, py, hz = peaks[q, 0], peaks[q, 1], heights[q]
+        for c in range(n):
+            d = math.hypot(xs[c] - px, ys[c] - py)
+            if d < best_d[c]:
+                best_d[c] = d
+                best_z[c] = hz
+        near_d[k] = best_d
+        near_z[k] = best_z
+    return near_d, near_z
+
+
+@njit(cache=True)
+def _grow(Z, S, seeds, peaks, xs, ys, heights, tables, mult, edge_factor, slope_noise,
+          sorted_heights, near_d, near_z, move_off, move_step,
+          protect_peaks, rho, overshadow_margin, max_boost, floor):
+    """The priority-queue growth loop, compiled. Fills Z and S in place.
+
+    Identical logic to the original pure-Python loop: the heap holds
+    (-height, flat_index, peak_id) tuples, the highest cell is popped and offers
+    each of the 16 neighbours a lower height.
+    """
+    n_table = tables.shape[1]
+    M = move_off.shape[0]
+    n_peaks = sorted_heights.shape[0]
+
+    heap = [(0.0, 0, 0)]          # typed list of (-h, cell, pid); seeded below
+    heap.pop()
+    for s in range(seeds.shape[0]):
+        c, pid = seeds[s, 0], seeds[s, 1]
+        z0 = heights[pid]
+        if z0 > Z[c]:             # Z[c] starts at -inf
+            Z[c] = z0             # sets cell to peak's exact height
+            S[c] = tables[pid].sum() / n_table   # start from the peak's own mean slope
+            heap.append((-z0, c, pid))
+    heapq.heapify(heap)
+
+    one_minus_rho = 1.0 - rho
+    while len(heap) > 0:
+        neg_h, c, pid = heapq.heappop(heap)
+        h = -neg_h
+        if h < Z[c]:
+            continue                              # stale entry
+        prev = S[c] + 1e-8                        # slope that produced this cell's height
+        prev_pow = prev ** rho
+
+        k = 0                                     # number of peaks lower than h (bisect_left)
+        if protect_peaks:
+            lo, hi = 0, n_peaks
+            while lo < hi:
+                mid = (lo + hi) // 2
+                if sorted_heights[mid] < h:
+                    lo = mid + 1
+                else:
+                    hi = mid
+            k = lo
+        c_edge = c * M
+        px, py = peaks[pid, 0], peaks[pid, 1]
+
+        for m in range(M):
+            nc = c + move_off[m]
+            e = c_edge + m
+            th = math.atan2(ys[nc] - py, xs[nc] - px) % TAU
+            t_idx = int(th / TAU * n_table) % n_table      # angle -> slope table index
+            target = tables[pid, t_idx] * mult[nc] + 1e-8
+            slope = prev_pow * target ** one_minus_rho * slope_noise[e]
+            drop = move_step[m] * edge_factor[e]  # horizontal step, with noise
+
+            eff = slope
+            if k:
+                # slope that would bring the terrain down to (summit - margin) at the
+                # closest lower peak, if we kept descending through this neighbour
+                s_req = (h - near_z[k, nc] + overshadow_margin) / (drop + near_d[k, nc])
+                if s_req > slope:                 # would bury
+                    eff = min(s_req, max_boost * slope)
+
+            h_new = h - eff * drop
+            if h_new > floor and h_new > Z[nc]:
+                Z[nc] = h_new
+                S[nc] = slope                     # store the unboosted slope, so the boost
+                heapq.heappush(heap, (-h_new, nc, pid))  # does not propagate through inheritance
 
 
 def build_terrain(
@@ -83,135 +169,67 @@ def build_terrain(
 
     # ---------- precomputation (numpy, once) ----------
     base_slopes = np.abs(rng.normal(slope_mean, slope_std, size=len(peaks)))
-    tables = [
-        make_slope_table(rng, bs, anisotropy, n_harmonics).tolist() for bs in base_slopes
-    ]
+    tables = np.array([
+        make_slope_table(rng, bs, anisotropy, n_harmonics) for bs in base_slopes
+    ]).reshape(len(peaks), N_TABLE)
 
     # Padded coordinates, so every cell (including the border) has a position
     xs_p = xmin + dx * np.arange(-PAD, n + PAD)
     ys_p = ymin + dy * np.arange(-PAD, n + PAD)
     Xp, Yp = np.meshgrid(xs_p, ys_p, indexing="ij")
 
-    # For every peak: table index of the angle of each cell as seen from the peak
-    theta_idx = []
-    for px, py in peaks:
-        th = np.arctan2(Yp - py, Xp - px) % TAU
-        idx = (th / TAU * N_TABLE).astype(np.int64) % N_TABLE # angle -> table index
-        theta_idx.append(idx.ravel().tolist())
+    # The angle of each cell as seen from each peak is computed inside _grow, only
+    # for the (peak, cell) pairs actually visited, instead of a full table per peak.
+    xs_flat = Xp.ravel().copy()
+    ys_flat = Yp.ravel().copy()
 
     # Smooth multiplier field, computed ONCE (exp keeps the slope positive)
     field = sum(w * smooth_noise(rng, W, s) for s, w in field_scales) # shape (W)
-    mult = np.exp(field_strength * field).ravel().tolist()
+    mult = np.exp(field_strength * field).ravel()
 
     # Per-edge random numbers, drawn in one go (one value per cell-and-offset pair)
     M = len(OFFSETS)
 
     # edge_factor = multiplicative noise on horizontal step: drop = step * edge_factor[e]
-    edge_factor = np.maximum(1.0 + rng.normal(0.0, edge_noise, size=W * W * M), 0.1).tolist() # one edge: (cell, offset) pair
-    slope_noise = np.exp(sigma * rng.normal(size=W * W * M)).tolist()
+    edge_factor = np.maximum(1.0 + rng.normal(0.0, edge_noise, size=W * W * M), 0.1) # one edge: (cell, offset) pair
+    slope_noise = np.exp(sigma * rng.normal(size=W * W * M))
 
-    # Peak protection: peaks sorted by height (ascending). For k = 1..P, near_d[k] and
-    # near_z[k] hold, for every cell, the distance to and the height of the closest peak
-    # among the k LOWEST peaks. For a cell at height h, the peaks lower than h are
-    # exactly the first k = bisect_left(sorted_heights, h) ones.
+    # Peak protection: peaks sorted by height (ascending). Row k of near_d / near_z
+    # holds, for every cell, the distance to and the height of the closest peak
+    # among the k LOWEST peaks (row 0 is unused). For a cell at height h, the peaks
+    # lower than h are exactly the first k = searchsorted(sorted_heights, h) ones.
     order = np.argsort(heights)
-    sorted_heights = heights[order].tolist()
-    near_d, near_z = [None], [None]
+    sorted_heights = heights[order]
     if protect_peaks:
-        best_d = np.full((W, W), np.inf)
-        best_z = np.zeros((W, W))
-        for q in order:
-            d = np.hypot(Xp - peaks[q, 0], Yp - peaks[q, 1])
-            closer = d < best_d
-            best_d = np.where(closer, d, best_d)
-            best_z = np.where(closer, heights[q], best_z)
-            near_d.append(best_d.ravel().tolist())
-            near_z.append(best_z.ravel().tolist())
+        near_d, near_z = _nearest_lower(xs_flat, ys_flat, peaks, heights, order)
+    else:
+        near_d = near_z = np.zeros((1, W * W))
 
-    """
-    near_d[k] = list where every entry = distance from that cell to closest of the k lowest peaks
-    near_z[k] = list of same length, storing height of that closest peak
-    """
+    # Moves: flat index offset and horizontal step length of each neighbour
+    move_off = np.array([di * W + dj for di, dj in OFFSETS], dtype=np.int64)
+    move_step = np.array([math.hypot(di * dx, dj * dy) for di, dj in OFFSETS])
 
-    # Moves as (flat index offset, horizontal step length, offset number)
-    moves = [
-        (di * W + dj, math.hypot(di * dx, dj * dy), m)
-        for m, (di, dj) in enumerate(OFFSETS)
-    ] # neighbors as flat index offsets
-    """
-    each move has 3 values:
-    -di * W + dj: flat index offset
-    -math.hypot(...): horizontal dist covered by that step
-    -m: position of offset in OFFSETS
-    """
-
-    # ---------- state: flat Python lists ----------
+    # ---------- state ----------
     # Border cells hold +inf so no offer is ever accepted there.
     Z_init = np.full((W, W), np.inf) # inf = acts as a wall
     Z_init[PAD:-PAD, PAD:-PAD] = -np.inf          # -inf = not reached yet
-    Z = Z_init.ravel().tolist()
-    S = [0.0] * (W * W) # slope of the winning offer per cell
+    Z = Z_init.ravel()
+    S = np.zeros(W * W) # slope of the winning offer per cell
 
-    heap = []             
-    # fill in heap with entries: (-height, flat_index, peak_id)
-    for pid, ((px, py), z0) in enumerate(zip(peaks, heights)):
+    # Seed cells: (flat index, peak id) for every peak
+    seeds = np.empty((len(peaks), 2), dtype=np.int64)
+    for pid, (px, py) in enumerate(peaks):
         i = min(max(int(round((px - xmin) / dx)), 0), n - 1)
         j = min(max(int(round((py - ymin) / dy)), 0), n - 1)
-        c = (i + PAD) * W + (j + PAD) # flat index
-        if z0 > Z[c]: # Z[c] starts at -inf
-            Z[c] = z0 # sets cell to peak's exact height
-            S[c] = sum(tables[pid]) / N_TABLE # start from the peak's own mean slope, not 0
-            # S[c] is mean of slope table
-            heap.append((-z0, c, pid))
-    heapq.heapify(heap)
+        seeds[pid] = ((i + PAD) * W + (j + PAD), pid)
 
-    # ---------- main loop (local names for speed) ----------
-    heappop, heappush, bisect_left = heapq.heappop, heapq.heappush, bisect.bisect_left
-    one_minus_rho = 1.0 - rho
-
-    while heap:
-        neg_h, c, pid = heappop(heap) # c = flat index, pid = unique idx per peak
-        h = -neg_h
-        if h < Z[c]:
-            continue                              # stale entry
-        tab = tables[pid]
-        tidx = theta_idx[pid]
-        prev = S[c] + 1e-8                        # slope that produced this cell's height
-        prev_pow = prev ** rho
-        """
-        slope = prev^rho * target^(1-rho) * noise
-        = exp( rho*log(prev) + (1-rho)*log(target) ) * noise
-        """
-        k = bisect_left(sorted_heights, h) if protect_peaks else 0 # num peaks lower than h
-        if k:
-            nd, nz = near_d[k], near_z[k]
-        c_edge = c * M
-
-        for off, step, m in moves: # step = dist
-            nc = c + off
-            e = c_edge + m
-            target = tab[tidx[nc]] * mult[nc] + 1e-8 # tab[...] = base slope
-            slope = prev_pow * target ** one_minus_rho * slope_noise[e]
-            drop = step * edge_factor[e] # horizontal step, with noise
-
-            eff = slope
-            if k:
-                # slope that would bring the terrain down to (summit - margin) at the
-                # closest lower peak, if we kept descending through this neighbour
-                s_req = (h - nz[nc] + overshadow_margin) / (drop + nd[nc])
-                # L = drop + nd[nc]: drop = dist(popped peak, candidate), nd[nc] = dist(candidate, lower peak)
-                # comes from: height_higher_peak - L*s = height_lower_peak
-                if s_req > slope: # would bury
-                    eff = min(s_req, max_boost * slope)
-
-            h_new = h - eff * drop
-            if h_new > floor and h_new > Z[nc]:
-                Z[nc] = h_new
-                S[nc] = slope                     # store the unboosted slope, so the boost
-                heappush(heap, (-h_new, nc, pid)) # does not propagate through inheritance
+    # ---------- main loop (compiled with numba, see _grow) ----------
+    _grow(Z, S, seeds, peaks, xs_flat, ys_flat, heights, tables, mult, edge_factor, slope_noise,
+          sorted_heights, near_d, near_z, move_off, move_step,
+          bool(protect_peaks), float(rho), float(overshadow_margin), float(max_boost), float(floor))
 
     # ---------- back to numpy ----------
-    Zout = np.array(Z).reshape(W, W)[PAD:-PAD, PAD:-PAD].copy()
+    Zout = Z.reshape(W, W)[PAD:-PAD, PAD:-PAD].copy()
     Zout[np.isinf(Zout)] = floor                  # cells no peak reached before the floor
 
     if final_noise_std > 0:
@@ -219,13 +237,14 @@ def build_terrain(
 
     X, Y = np.meshgrid(xs, ys, indexing="ij")
     if return_slopes:
-        slopes = np.array(S).reshape(W, W)[PAD:-PAD, PAD:-PAD].copy()
+        slopes = S.reshape(W, W)[PAD:-PAD, PAD:-PAD].copy()
         return X, Y, Zout, slopes
     return X, Y, Zout
 
 
 def show_terrain(X, Y, Z):
     """Display the complete terrain using PyVista."""
+    import pyvista as pv
 
     grid = pv.StructuredGrid(X, Y, Z)
 
@@ -347,11 +366,9 @@ def show_terrain_time(GX, GY, GZ, time_values):
     plotter.show()
 
 
-import numpy as np
-import pyvista as pv
-
 def make_trees(frame):
     """frame: (n, 4) array of x, y, z, size -> (trunk_mesh, canopy_mesh)"""
+    import pyvista as pv
     if len(frame) == 0:
         # dummy invisible point, because glyphing an empty cloud fails
         frame = np.array([[0.0, 0.0, -100.0, 1e-3]])
@@ -365,6 +382,8 @@ def make_trees(frame):
 
 
 def show_terrain_time_trees(GX, GY, GZ, time_values, trees=None):
+    import pyvista as pv
+    from matplotlib.colors import LinearSegmentedColormap
 
     # COLOR MAP
 
