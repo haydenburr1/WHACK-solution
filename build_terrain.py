@@ -4,16 +4,7 @@ import math
 import numpy as np
 from scipy.ndimage import maximum_filter
 import pyvista as pv
-import time
-import pandas as pd
-from pathlib import Path
-from matplotlib.colors import ListedColormap, LinearSegmentedColormap
-
-vol = pd.read_csv(Path("data") / "volatility.csv", index_col=0).reset_index()
-univ = pd.read_csv(Path("data") / "universe.csv", index_col=0).reset_index()
-returns = pd.read_parquet(Path("data") / "prices.parquet").pct_change().reset_index()
-
-sectors = list(set(univ["sector"]))
+from matplotlib.colors import LinearSegmentedColormap
 
 TAU = 2 * math.pi
 N_TABLE = 200
@@ -27,16 +18,15 @@ OFFSETS = [
 SLOPE_SCALE_FACTOR = 5 # higher = steeper slopes
 
 def smooth_noise(rng, n, scale):
-    """Gaussian-blurred white noise (correlation length `scale` cells), unit std."""
+    """Gaussian-blurred white noise (correlation length `scale` cells), unit std.
+
+    1. white noise, to frequency domain, compute bins, build gaussian filter FFT(g) x FFT(f) = FFT(g * f)
+    2. apply filter and go back: spec = fft(noise) * filter, then ifft2(spec) returns to space
+    """
     f2 = np.fft.fftfreq(n)[:, None] ** 2 + np.fft.fftfreq(n)[None, :] ** 2
     spec = np.fft.fft2(rng.normal(size=(n, n))) * np.exp(-2 * np.pi**2 * scale**2 * f2)
     field = np.fft.ifft2(spec).real
     return field / field.std()
-
-    """
-    1. white noise, to frequency domain, compute bins, build gaussian filter FFT(g) x FFT(f) = FFT(g * f)
-    2. apply filter and go back: spec = fft(noise) * filter, then ifft2(spec) returns to space
-    """
 
 
 def make_slope_table(rng, base_slope, anisotropy, n_waves=3, n_table=N_TABLE, min_slope=0.02):
@@ -352,9 +342,6 @@ def show_terrain_time(GX, GY, GZ, time_values):
 
     plotter.show()
 
-
-import numpy as np
-import pyvista as pv
 
 def make_trees(frame):
     """frame: (n, 4) array of x, y, z, size -> (trunk_mesh, canopy_mesh)"""

@@ -2,23 +2,22 @@
 """
 Fetch market capitalization for every company in the Wikipedia S&P 500 list.
 
-Install:
-    pip install pandas requests lxml yfinance
-
-Run:
-    python sp500_market_caps.py
-    python sp500_market_caps.py --out caps.csv --workers 16
+Run (from anywhere):
+    python pipeline/get_market_caps.py                # writes data/caps.csv
+    python pipeline/get_market_caps.py --workers 16
 """
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from io import StringIO
+from pathlib import Path
 
 import pandas as pd
 import requests
 import yfinance as yf
 
 WIKI_URL = "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies"
+DEFAULT_OUT = Path(__file__).resolve().parent.parent / "data" / "caps.csv"   # repo-root data/
 HEADERS = {"User-Agent": "Mozilla/5.0 (sp500-market-cap-script; educational use)"}
 
 
@@ -51,7 +50,7 @@ def get_market_cap(ticker: str):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", default="sp500_market_caps.csv", help="output CSV path")
+    parser.add_argument("--out", default=str(DEFAULT_OUT), help="output CSV path")
     parser.add_argument("--workers", type=int, default=8, help="parallel requests")
     args = parser.parse_args()
 
