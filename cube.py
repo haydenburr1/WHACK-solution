@@ -97,6 +97,7 @@ def green_mountain_cmap(zmax=CLIM[1], sea=land_lift):
         (land(0.80), "#7d7d7d"),    # rock: gray
         (1.0,        "#e6e6e6"),    # peaks: light gray
     ]
+    # Returns a linear segmented colormap to smoothly transition between the colors when it is generated.
     return LinearSegmentedColormap.from_list("green_mountain", stops, N=512)
 
 HALF = cell_size / 2
@@ -344,8 +345,10 @@ TREE_OFFSETS = {(i, k): np.column_stack([_tree_rng.uniform(0, 2 * np.pi, MAX_SID
 
 _u_local = np.linspace(0, cell_size, res)       # tile axis, as 2DT_trees.py's gx within a cell
 
-
+# Finds the particular terrain height of a given location.
+# This is mostly to make sure that the trees don't float above the ground. 
 def surface_z(Z, x, y):
+    # Find the nearest grid index to the corresponding coordinate to get the height of.
     ix = np.clip(np.searchsorted(_u_local, x), 0, res - 1)
     iy = np.clip(np.searchsorted(_u_local, y), 0, res - 1)
     return Z[ix, iy]
@@ -356,11 +359,12 @@ def veg_scores(tiles):
     from scipy.stats import rankdata
 
     all_ret = np.concatenate([t[3] for t in tiles])
+    # Ranks each stock against each other and turns the rank into a percentage between 0 and 1.
     pct = (rankdata(all_ret) - 1) / max(len(all_ret) - 1, 1)
     score = np.where(all_ret > 0, pct, 0.0)
     return np.split(score, np.cumsum([len(t[3]) for t in tiles])[:-1])
 
-
+# Calculate the positions for which the trees should be placed on.
 def tree_local(tiles):
     """Per sector: (m, 4) array of x, y, z, size in tile coordinates (None if no trees)."""
     out = []
@@ -388,7 +392,7 @@ def tree_local(tiles):
         out.append(np.array(local) if local else None)
     return out
 
-
+# Creates the trees depending on its location, size and direction.
 def tree_frame(tiles, scene):
     """-> (points (m, 3), up directions (m, 3), sizes (m,)) for every tree that day.
 
@@ -434,7 +438,7 @@ def tree_meshes(points, normals, sizes):
 
 MAX_TREES = sum(len(t) for t in sector_tickers) * (1 + MAX_SIDE)
 
-
+# This makes the Tree spawning more efficient by moving existing trees around instead of creating new ones.jkl
 class TreeLayer:
     """Trunks and canopies as two fixed-size meshes whose points move each day.
 
@@ -511,7 +515,7 @@ def tile_task(day, i):
     Z, xy, heights, mean_returns = sector_terrain(i, vol["date"].iloc[day])
     return day, i, Z.astype(np.float32), xy, heights, mean_returns
 
-
+# Calculates the data that has not already been saved
 class Precomputer:
     def __init__(self, first, last, saved: SavedTerrain, workers=None, keep_days=800):
         self.first, self.last = first, last
