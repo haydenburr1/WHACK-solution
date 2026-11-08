@@ -243,6 +243,20 @@ print("test2")
 
 # print(cloud_values_grid.shape)
 
+dots = [
+    np.vstack([sector_data[i, j][-1][:, :2] for i in range(len(sectors))])
+    for j in range(len(time_values))
+]
+
+# dots = []
+# for j in range(len(time_values)):
+#     pts = []
+#     for i in range(len(sectors)):
+#         ci, ri = i % n_cols, i // n_cols
+#         pts.append(sector_data[i, j][-1][:, :2] + np.array([ci * cell_size, ri * cell_size]))
+#     dots.append(np.vstack(pts))
+
+
 cloud_values_2d = cloud_values_grid[:, :, -1]
 
 show_terrain_time_trees(
@@ -250,5 +264,6 @@ show_terrain_time_trees(
     time_values,
     trees=trees,
     background_image="assets/background_2_fixed.jpg",
-    cloud_values=cloud_values_grid
+    cloud_values=cloud_values_grid,
+    dots=dots
 )
