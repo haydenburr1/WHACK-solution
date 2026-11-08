@@ -3,6 +3,7 @@ import pandas as pd
 from pathlib import Path
 from scipy.stats import rankdata
 import pyvista as pv
+import sys
 
 """
 ./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/2DT_trees.py
@@ -26,8 +27,19 @@ gy = GY[0, :]
 vol = pd.read_csv(Path("data") / "volatility.csv", index_col=0).reset_index()
 univ = pd.read_csv(Path("data") / "universe.csv", index_col=0).reset_index()
 returns = pd.read_parquet(Path("data") / "prices.parquet").pct_change().reset_index()
+marketcaps = pd.read_csv(Path("data") / "caps.csv", index_col=0).reset_index()
 
 
+
+"""
+print(marketcaps)
+
+    wiki_symbol                          company                  sector  ... ticker  market_cap_usd  market_cap_bn
+0          AAPL                       Apple Inc.  Information Technology  ...   AAPL    4.975383e+12        4975.38
+1          NVDA                           Nvidia  Information Technology  ...   NVDA    4.506796e+12        4506.80
+2          MSFT                        Microsoft  Information Technology  ...   MSFT    3.940413e+12        3940.41
+3         GOOGL          Alphabet Inc. (Class A)  Communication Services  ...  GOOGL    3.501085e+12        3501.09
+"""
 
 vol["date"] = pd.to_datetime(vol["date"])
 returns["date"] = pd.to_datetime(returns["date"])
@@ -52,12 +64,34 @@ for j, t in enumerate(time_values):
     for i, s in enumerate(sectors):
         tickers = univ.loc[univ["sector"] == s, "ticker"].values
 
+        betas = np.zeros(len(tickers))
+
         subset_returns = returns.loc[
             (returns["date"] >= start_time) &
             (returns["date"] <= t),
             tickers
         ].values
-        mean_returns = np.mean(subset_returns, axis=0)
+
+        mean_returns_nonweighted = np.mean(subset_returns, axis=0)
+        
+        marketcaps_relevant = marketcaps[marketcaps["wiki_symbol"].isin(tickers)]
+        caps = marketcaps_relevant.set_index("ticker")["market_cap_usd"].reindex(tickers).values
+        caps_b = caps[None, :]          # shape (1, n_tickers) for broadcasting
+
+        mask = ~np.isnan(subset_returns)
+
+        # Cap-weighted portfolio return: one value per DATE (axis=1)
+        port = np.nansum(subset_returns * caps_b, axis=1) / (mask * caps_b).sum(axis=1)
+
+        port_dev = port - port.mean()
+        port_var = np.var(port)
+
+        betas = np.zeros(subset_returns.shape[1])
+        for j in range(subset_returns.shape[1]):
+            r = subset_returns[:, j]                 # ticker j's time series
+            valid = ~np.isnan(r)
+            cov = np.cov(r[valid], port[valid])[0, 1]   # off-diagonal of cov matrix
+            betas[j] = cov / port_var # one beta val per stock in this sector/timestamp
 
         corr = np.corrcoef(subset_returns, rowvar=False)
         res_mds, _ = mds_rows(corr)                      # (n, 2) in [-1, 1]
@@ -67,7 +101,7 @@ for j, t in enumerate(time_values):
         xy = np.empty_like(res_mds, dtype=float)
         xy[:, 0] = cx + margin + (res_mds[:, 0] + 1) / 2 * usable
         xy[:, 1] = cy + margin + (res_mds[:, 1] + 1) / 2 * usable
-        sector_data[i, j] = (cx, cy, xy, mean_returns)
+        sector_data[i, j] = (cx, cy, xy, mean_returns_nonweighted, betas)
 
 # ---------------- trees ----------------
 rng = np.random.default_rng(0)
@@ -132,10 +166,55 @@ for j in range(len(time_values)):
             frame.extend((x, y, zz, side_size) for x, y, zz in zip(sx[ok], sy[ok], z[ok]))
     trees.append(np.array(frame).reshape(-1, 4))
 
+# clouds
+
+# ---------------- clouds ----------------
+
+# One cloud value per (x, y) grid position
+cloud_values = np.zeros(GX.shape)
+
+# Reproducible cloud locations
+cloud_rng = np.random.default_rng(42)
+
+# Generate several cloud formations
+n_clouds = 8
+
+for _ in range(n_clouds):
+
+    # Random cloud centre
+    cx = cloud_rng.uniform(gx.min(), gx.max())
+    cy = cloud_rng.uniform(gy.min(), gy.max())
+
+    # Cloud horizontal dimensions
+    rx = cloud_rng.uniform(2.0, 5.0)
+    ry = cloud_rng.uniform(2.0, 4.0)
+
+    # Maximum cloud strength
+    strength = cloud_rng.uniform(0.5, 1.0)
+
+    # Gaussian cloud profile
+    cloud = strength * np.exp(
+        -0.5 * (
+            ((GX - cx) / rx)**2 +
+            ((GY - cy) / ry)**2
+        )
+    )
+
+    # Combine overlapping clouds
+    cloud_values = np.maximum(cloud_values, cloud)
+
+# Optional: remove very weak cloud edges
+cloud_values[cloud_values < 0.05] = 0.0
+#cloud_values[cloud_values > 0.02] = 0.0
+
+#print(rng.random.choice(0, 1, size=GX.shape).astype(bool))
+
+print('cloud_values shape:', cloud_values.shape)
+
 show_terrain_time_trees(
     GX, GY, GZ,
     time_values,
     trees=trees,
     background_image="background_2.jpeg",
-    cloud_values=
+    cloud_values=cloud_values
 )

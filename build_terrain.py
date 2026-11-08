@@ -371,14 +371,16 @@ def show_terrain_time_trees(
     background_image=None,
     cloud_values=None
 ):
-
     # --------------------------------------------------
     # TERRAIN COLOUR MAP
     # --------------------------------------------------
 
-    zmax = float(np.max(GZ))
+    zmax = float(np.nanmax(GZ))
+    if zmax <= 0:
+        raise ValueError("GZ must contain positive terrain heights.")
+
     sea = 0.5
-    s = sea / zmax
+    s = min(sea / zmax, 1.0)
 
     def land(f):
         return s + f * (1 - s)
@@ -400,10 +402,14 @@ def show_terrain_time_trees(
 
     n_times = GZ.shape[2]
 
-    assert len(time_values) == n_times
+    if len(time_values) != n_times:
+        raise ValueError("time_values must match the time dimension of GZ.")
 
-    if trees is not None:
-        assert len(trees) == n_times
+    if trees is not None and len(trees) != n_times:
+        raise ValueError("trees must contain one entry per time step.")
+
+    if GX.shape != GY.shape or GX.shape != GZ.shape[:2]:
+        raise ValueError("GX and GY must match the first two dimensions of GZ.")
 
     # --------------------------------------------------
     # INITIAL TERRAIN
@@ -413,6 +419,9 @@ def show_terrain_time_trees(
 
     grid = pv.StructuredGrid(GX, GY, Z)
     grid["height"] = Z.flatten(order="F")
+
+    x_flat = GX.flatten(order="F")
+    y_flat = GY.flatten(order="F")
 
     plotter = pv.Plotter()
 
@@ -437,96 +446,70 @@ def show_terrain_time_trees(
     # --------------------------------------------------
 
     cloud_poly = None
+    cloud_actor = None
 
     if cloud_values is not None:
 
-        assert cloud_values.shape == GX.shape, (
-            "cloud_values must have the same X-Y shape as GX and GY"
+        if cloud_values.shape != GX.shape:
+            raise ValueError(
+                "cloud_values must have the same X-Y shape as GX and GY."
+            )
+
+        CLOUD_HEIGHT = 5.0
+        CLOUD_THRESHOLD = 0.25
+        CLOUD_PROBABILITY = 0.10
+        CLOUD_POINT_SIZE = 35
+
+        values = np.nan_to_num(
+            cloud_values, nan=0.0, posinf=0.0, neginf=0.0
+        )
+        values = np.clip(values, 0.0, 1.0)
+
+        values_flat = values.flatten(order="F")
+
+        # Find positions where cloud strength exceeds the threshold
+        eligible = np.flatnonzero(
+            values_flat > CLOUD_THRESHOLD
         )
 
-        # Fixed altitude above terrain
-        CLOUD_HEIGHT = 2.0
-
-        # Minimum cloud value for visibility
-        CLOUD_THRESHOLD = 0.02
-
-        # Maximum cloud radius in world coordinates
-        CLOUD_RADIUS = 1.5
-
-        # Number of Gaussian sprites used to construct each cloud
-        CLOUD_SPRITES = 12
-
-        cloud_values = np.nan_to_num(
-            cloud_values, nan=0.0
-        )
-
-        cloud_values = np.clip(cloud_values, 0.0, 1.0)
-
-        # Only locations with clouds
-        cloud_sizes = cloud_values.flatten(order="F")
-        keep = cloud_sizes > CLOUD_THRESHOLD
-
-        x = GX.flatten(order="F")[keep]
-        y = GY.flatten(order="F")[keep]
-        z = Z.flatten(order="F")[keep]
-
-        sizes = cloud_sizes[keep]
-
-        # Create overlapping Gaussian sprites for each cloud
+        # Randomly sample a subset of eligible positions
         rng = np.random.default_rng(42)
 
-        cloud_points = []
-        sprite_sizes = []
+        selected = eligible[
+            rng.random(len(eligible)) < CLOUD_PROBABILITY
+        ]
 
-        for cx, cy, cz, strength in zip(x, y, z, sizes):
+        # Coordinates of the selected cloud positions
+        cloud_x = x_flat[selected]
+        cloud_y = y_flat[selected]
+        cloud_z = Z.flatten(order="F")[selected]
 
-            # Cloud centre is always at the same height
-            centre_z = cz + CLOUD_HEIGHT
+        strength = values_flat[selected]
 
-            # Cloud volume increases with cloud_values
-            radius = CLOUD_RADIUS * strength
+        cloud_points = np.column_stack([
+            cloud_x,
+            cloud_y,
+            cloud_z + CLOUD_HEIGHT
+        ])
 
-            for i in range(CLOUD_SPRITES):
-
-                # Random position inside the cloud volume
-                angle = rng.uniform(0, 2 * np.pi)
-                distance = radius * np.sqrt(rng.uniform(0, 1))
-
-                dx = distance * np.cos(angle)
-                dy = distance * np.sin(angle)
-
-                # Vertical spread gives a fluffy appearance
-                dz = rng.normal(0, radius * 0.25)
-
-                cloud_points.append([
-                    cx + dx,
-                    cy + dy,
-                    centre_z + dz
-                ])
-
-                # Vary sprite size within each cloud
-                sprite_sizes.append(
-                    strength * rng.uniform(0.7, 1.3)
-                )
-
-        cloud_poly = pv.PolyData(
-            np.asarray(cloud_points)
-        )
-
-        cloud_poly["cloud_size"] = np.asarray(sprite_sizes)
+        cloud_poly = pv.PolyData(cloud_points)
+        cloud_poly["cloud_size"] = strength
 
         cloud_actor = plotter.add_points(
             cloud_poly,
             name="clouds",
             style="points_gaussian",
             color="white",
-            opacity=0.16,
-            point_size=35,
+            opacity=0.25,
+            point_size=CLOUD_POINT_SIZE,
             show_scalar_bar=False,
             render=False,
         )
 
+        # Scale Gaussian sprites according to cloud strength
         cloud_actor.mapper.scale_array = "cloud_size"
+
+        print(f"Number of clouds: {len(selected)}")
 
     # --------------------------------------------------
     # TREE TEMPLATES
@@ -575,7 +558,7 @@ def show_terrain_time_trees(
     draw_trees(0)
 
     # --------------------------------------------------
-    # TIME LABEL AND SLIDER
+    # TIME LABEL
     # --------------------------------------------------
 
     date_label = plotter.add_text(
@@ -584,15 +567,18 @@ def show_terrain_time_trees(
         font_size=12
     )
 
-    x_flat = GX.flatten(order="F")
-    y_flat = GY.flatten(order="F")
+    # --------------------------------------------------
+    # TIME UPDATE CALLBACK
+    # --------------------------------------------------
 
     def update_terrain(value):
 
         t = int(round(value))
+        t = max(0, min(t, n_times - 1))
 
         Z_new = GZ[:, :, t]
 
+        # Update terrain geometry
         grid.points = np.column_stack([
             x_flat,
             y_flat,
@@ -601,32 +587,23 @@ def show_terrain_time_trees(
 
         grid["height"] = Z_new.flatten(order="F")
 
+        # Update trees
         draw_trees(t)
 
-        # Update cloud altitude with terrain, keeping
-        # the same fixed vertical offset.
+        # Update cloud altitude to follow the changing terrain
         if cloud_poly is not None:
-
-            cloud_points = cloud_poly.points.copy()
-
-            # Cloud positions were generated relative to
-            # the initial terrain. For animated terrain,
-            # update their vertical positions here.
-            #
-            # This preserves their horizontal distribution.
-            cloud_points[:, 2] = (
-                cloud_points[:, 2]
-                + (
-                    GZ[:, :, t].flatten(order="F")[keep]
-                    - GZ[:, :, 0].flatten(order="F")[keep]
-                ).repeat(CLOUD_SPRITES)
+            cloud_poly.points[:, 2] = (
+                Z_new.flatten(order="F")[selected] + CLOUD_HEIGHT
             )
 
-            cloud_poly.points = cloud_points
-
-        date_label.SetInput(str(time_values[t]))
+        # Update upper-left date label
+        date_label.SetText(2, str(time_values[t]))
 
         plotter.render()
+
+    # --------------------------------------------------
+    # SLIDER
+    # --------------------------------------------------
 
     plotter.add_slider_widget(
         update_terrain,
