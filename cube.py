@@ -643,10 +643,76 @@ class CubeScene:
         return np.broadcast_to(n, np.shape(a) + (3,)).copy()
 
     # -- hooks ----------------------------------------------------------------
+    
+
+
+    
+  
+
+# How close (in scene units) the mouse must be to a peak to show its stock.
+HOVER_RADIUS = 1.2
+
+
+class CubeScene:
+    """Six face meshes that are created once and updated in place each day.
+
+    Subclasses change the shape by overriding `place` / `up`.
+    """
+    hover_radius = HOVER_RADIUS
+    tree_scale = 1.0               # tree size multiplier
+    tooltip_font = 11
+
+    def __init__(self, plotter):
+        self.plotter = plotter
+        self.meshes, self.actors = [], []
+        self.tree, self.labels, self.day = None, None, None
+        self.cmap = green_mountain_cmap()
+        self.show_trees = True
+        self.tiles = None
+        self.trees = None          # TreeLayer, made on first draw
+        self.peaks = None          # (n, 3) hover anchors, same order as self.labels
+
+    # -- geometry (a, b are face coords centred on the face, h is height) ---
+    def place(self, sector, a, b, h):
+        x, y, z = face_to_xyz(sector, np.asarray(a, float), np.asarray(b, float),
+                              np.asarray(h, float))
+        return np.stack(np.broadcast_arrays(x, y, z), axis=-1)
+
+    def up(self, sector, a, b):
+        axis, sign = FACE_AXES[sector]
+        n = np.zeros(3)
+        n[axis] = sign
+        return np.broadcast_to(n, np.shape(a) + (3,)).copy()
+
+    # -- hooks ----------------------------------------------------------------
     def decorate(self):
         """One-off scene additions after the first day is drawn."""
         self.plotter.add_axes()
         self.plotter.show_grid()
+
+        # Put one sector name just outside the centre of each cube face.
+        # The points sit beyond the tallest terrain so the labels remain
+        # readable and do not get buried by changing peaks.
+        label_points = []
+        label_text = []
+        label_offset = HALF + hmax + land_lift + 0.8
+
+        for sector in sectors:
+            axis, sign = FACE_AXES[sector]
+            point = np.zeros(3, dtype=float)
+            point[axis] = sign * label_offset
+            label_points.append(point)
+            label_text.append(sector)
+
+        self.sector_label_actor = self.plotter.add_point_labels(
+            np.asarray(label_points),
+            label_text,
+            font_size=14,
+            text_color="black",
+            shape=None,
+            always_visible=True,
+            render=False,
+        )
 
     def highlight(self, index):
         """Hovered stock index (or None). The cube relies on the tooltip only."""
