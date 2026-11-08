@@ -5,8 +5,6 @@ Fetch market capitalization for every company in the Wikipedia S&P 500 list.
 Install:
     pip install pandas requests lxml yfinance
 
-./venv/bin/python /home/tobiasocula/Documents/whack/WHACK-solution/get_market_caps.py --out caps.csv
-
 Run:
     python sp500_market_caps.py
     python sp500_market_caps.py --out caps.csv --workers 16
